@@ -7,10 +7,7 @@
 
 extern DISK disk;
 
-
 FD fd_table[MAX_FILE_OPEN] = {0,0};
-
-
 
 int readDisk(unsigned char dev_id, unsigned char *ptr, int offset, int size)
 {
@@ -20,7 +17,7 @@ int readDisk(unsigned char dev_id, unsigned char *ptr, int offset, int size)
 	}
 	else
 	{
-		printf("Error no disk device found");
+		printf("[DEVICE]:Error no disk device found\n");
 		return -1;
 	}
 
@@ -40,4 +37,5 @@ int writeDisk(unsigned char dev_id, unsigned char *ptr, int offset, int size)
 	}
 
 }
+
 

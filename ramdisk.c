@@ -7,7 +7,7 @@
 
 
 DISK disk = {
-		.dev_id=0xff,
+		.dev_id = 0xff,
 		.data = NULL,
 		.size = 0, 
 		.write = writeRamdisk, 
@@ -20,14 +20,17 @@ DISK disk = {
 int removeRamdiskDevice()
 {
 	free(disk.data); //free disk
+	disk.data = NULL;
 	disk.size = 0;
 }
 int createRamdiskDevice(unsigned int diskSize) 
 {	
+	
 	if (disk.data == NULL)
-	{	
-		
+	{			
 		disk.data = (unsigned char *)malloc(diskSize);  //Size in bytes
+		memset(disk.data, 0x00, diskSize);
+		printf("fat init\n");
 	}
 	else
 	{
@@ -35,6 +38,7 @@ int createRamdiskDevice(unsigned int diskSize)
 		free(disk.data); //free disk
 		disk.data = (unsigned char *)malloc(diskSize);  //Size in bytes
 		memset(disk.data, 0x00, diskSize);
+		
 	}
 	return disk.dev_id;
 }	
