@@ -1,3 +1,5 @@
+#ifndef __fat_h
+#define __fat_h
 
 /* FAT 16 */
 typedef struct
@@ -49,6 +51,7 @@ int del_chain(unsigned short start_cluster);
 
 /* Fat16 api */
 int fat_open(int dev_id, char* filename, int flags, int mode);
+int fat_create(int dev_id, char* filename, int mode);
 int fat_close(int fd);
 int fat_seek(int fd, int offset, int whence);
 int fat_write(int fd, char *buffer, int size);
@@ -94,3 +97,5 @@ int fat_next(int dev_id, char *path);
 #define b_endian16(s_integer)	swap16(s_integer)
 
 #define l_endian16(s_integer)	swap16(s_integer)
+
+#endif

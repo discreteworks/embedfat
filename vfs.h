@@ -1,3 +1,6 @@
+#ifndef __vfs_h
+#define __vfs_h
+
 #define MAX_FILE_OPEN	10
 
 struct ml
@@ -42,4 +45,5 @@ int format(int dev_id);
 int read(unsigned dev_id, int block_no,unsigned char *buffer, int offset, int bytes);
 int write(unsigned dev_id, int block_no,unsigned char *buffer, int offset, int bytes);
 
+#endif
 
