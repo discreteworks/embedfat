@@ -43,10 +43,10 @@ typedef struct
 
 /* Fat internals */
 int find(unsigned char dev_id, char* filename, unsigned short start_cluster);
-int find_n(unsigned char dev_id, char* filename, unsigned short *start_cluster);
+int find_name(unsigned char dev_id, char* filename, unsigned short *start_cluster);
 int search_free_dir(unsigned char dev_id, unsigned short start_cluster);
 unsigned short search_free_space(unsigned char dev_id);
-int del_chain(unsigned short start_cluster);
+int delete_chain(int dev_id, unsigned short start_cluster);
 
 
 /* Fat16 api */
@@ -66,6 +66,7 @@ int fat_next(int dev_id, char *path);
 
 #define ROOT_DIR			64 			// number of root directories
 #define BLOCK_SIZE 			512			// sector size
+#define BLOCK_PER_FAT 		0x14		// block per fat
 #define FAT16 				"FAT16" 	// FAT16
 #define FAT32 				"FAT32" 	// FAT32
 #define FILE_SEPARATOR 		'/'			// File separator

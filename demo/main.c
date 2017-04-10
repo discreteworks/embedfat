@@ -22,6 +22,8 @@ static int file_open_demo();
 static int dir_create_demo();
 static int format_demo();
 static int file_create_demo();
+static int file_delete_demo();
+static int dir_delete_demo();
 
 int  main()
 {
@@ -35,6 +37,8 @@ int  main()
 	result |= mount_demo();
 	result |= format_demo();
 	result |= file_create_demo();
+	result |= file_delete_demo();
+	result |= dir_delete_demo();
 
 	if (result == 0)
 	{
@@ -92,6 +96,49 @@ static int file_create_demo()
 	return 0;
 }
 
+static int file_delete_demo()
+{
+	char path[] = "FOO";
+	int fd;
+	char *buffer;
+
+	char *pos;
+
+	
+	printf("\n***************\n"); 
+	printf("\nFILE OPEN DEMO \n"); 
+	printf("\n***************\n"); 
+	
+	int device_id =  disk.init( BLOCK_SIZE * 1000); // 1000 blocks
+	
+	format(device_id);
+
+	fat_mount(device_id);  //vfs specific function
+
+	fd = fat_open(device_id, path ,O_CREAT|O_RDWR, 0x21);	
+	
+	printf("fd:%d\n", fd);
+
+	/* close file */
+	fat_close(fd);
+
+	fat_del(device_id, path);
+
+	search_free_dir(device_id, 0);
+
+	fd = fat_open(device_id, path , O_RDWR, 0x21);
+
+	printf("fd:%d\n", fd);
+
+	fat_close(fd);
+
+	disk.deinit();
+
+	return fd == -1 ? 0 : 1;
+
+
+}
+
 static int file_open_demo()
 {
 	char path[] = "FOO.TXT";
@@ -108,14 +155,14 @@ static int file_open_demo()
 
 	fat_mount(device_id);  //vfs specific function
 
-	fd = fat_open(device_id, path ,O_CREAT|O_RDWR, 0xFF);	
+	fd = fat_open(device_id, path ,O_CREAT|O_RDWR, 0x00);	
 	
 	printf("fd:%d\n", fd);
 
 	/* close file */
 	fat_close(fd);
 
-	fd = fat_open(device_id, path ,O_RDWR, 0xFF);	
+	fd = fat_open(device_id, path ,O_RDWR, 0x00);	
 	
 	printf("fd:%d\n",fd);
 
@@ -194,7 +241,7 @@ int mount_demo()
 
 	set_cwd(device_id, "");
 
-	fd = fat_open(device_id, path ,O_CREAT|O_RDWR, 0xFF);	
+	fd = fat_open(device_id, path ,O_CREAT|O_RDWR, 0x00);	
 	
 	printf("fd:%d\n", fd);
 
@@ -205,7 +252,7 @@ int mount_demo()
 	
 	fat_mount(device_id);  //vfs specific function
 
-	fd = fat_open(device_id, path , O_RDWR, 0xFF);	
+	fd = fat_open(device_id, path , O_RDWR, 0x00);	
 	
 	printf("fd:%d\n", fd);
 
@@ -235,7 +282,7 @@ static int format_demo()
 
 	set_cwd(device_id, "");
 
-	fd = fat_open(device_id, path ,O_CREAT|O_RDWR, 0xFF);	
+	fd = fat_open(device_id, path ,O_CREAT|O_RDWR, 0x00);	
 	
 	printf("fd:%d\n", fd);
 
@@ -250,7 +297,7 @@ static int format_demo()
 
 	printf("status:%d\n", status);
 	
-	fd = fat_open(device_id, path , O_RDWR, 0xFF);	
+	fd = fat_open(device_id, path , O_RDWR, 0x00);	
 	
 	printf("fd:%d\n", fd);
 	
@@ -297,13 +344,13 @@ static int dir_create_demo()
 	
 	fat_mkdir(device_id,pathh);
 
-	fd = fat_open(device_id, file_path ,O_CREAT|O_RDWR, 0xFF);
+	fd = fat_open(device_id, file_path ,O_CREAT|O_RDWR, 0x00);
 
 	printf("fd:%d\n", fd);
 
 	fat_close(fd);
 	
-	fd = fat_open(device_id, file_path ,O_RDWR, 0xFF);
+	fd = fat_open(device_id, file_path ,O_RDWR, 0x00);
 
 	printf("fd:%d\n", fd);
 
@@ -312,6 +359,63 @@ static int dir_create_demo()
 	disk.deinit();
 
 	return 0;
+
+}
+
+
+static int dir_delete_demo()
+{
+	char file_path[] =  "sam/foo.txt";	
+	char patha[] = "dam"; 	
+	char pathb[] = "sam"; 
+	char pathc[] = "sam/dam"; 
+	int fd, status;
+	char *rpath;
+
+	printf("\n***************\n");
+	printf("\nDELETE DIR DEMO\n"); 
+	printf("\n***************\n"); 
+	
+	int device_id =  disk.init( BLOCK_SIZE * 1000); // 1000 blocks
+
+	format(device_id);
+
+	fat_mount(device_id);  //vfs specific function
+
+	set_cwd(device_id, "");
+	
+	fat_mkdir(device_id,patha);
+
+	fat_mkdir(device_id,pathb);
+
+	fat_mkdir(device_id,pathc);
+
+	/*fd = fat_open(device_id, file_path ,O_CREAT|O_RDWR, 0x00);
+
+	printf("fd:%d\n", fd);
+
+	fat_close(fd);
+	
+	fd = fat_open(device_id, file_path ,O_RDWR, 0x00);
+
+	printf("fds:%d\n", fd);
+*/
+	status = fat_rmdir(device_id, pathb);
+		
+	set_cwd(device_id, pathc);
+
+	rpath = (char*)malloc (20);
+
+	memset(rpath,0,20);
+
+	get_cwd(device_id, rpath);
+
+	
+	printf("rpath:%s", rpath);
+	free(rpath);	
+	disk.deinit();
+
+	return status == -1 ? 0 : status  ;
 
 }
 
