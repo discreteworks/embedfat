@@ -172,6 +172,8 @@ static int file_open_demo()
 
 	printf("read:%d\n",fat_read(fd,buffer, txt_len));
 
+	/*printf("%s",buffer);*/
+
 	if (strcmp(buffer,txt) != 0)
 	{
 		free(buffer);
@@ -390,7 +392,7 @@ static int dir_delete_demo()
 
 	fat_mkdir(device_id,pathc);
 
-	/*fd = fat_open(device_id, file_path ,O_CREAT|O_RDWR, 0x00);
+	fd = fat_open(device_id, file_path ,O_CREAT|O_RDWR, 0x00);
 
 	printf("fd:%d\n", fd);
 
@@ -399,7 +401,7 @@ static int dir_delete_demo()
 	fd = fat_open(device_id, file_path ,O_RDWR, 0x00);
 
 	printf("fds:%d\n", fd);
-*/
+
 	status = fat_rmdir(device_id, pathb);
 		
 	set_cwd(device_id, pathc);

@@ -81,7 +81,7 @@ unsigned short search_free_space(unsigned char dev_id)
 	/* read the root block */
 	read(dev_id, 0, (unsigned char*)&boot, 0, sizeof(boot));	
 
-	fat_blocks = l_endian16(boot.b_per_fat);   /* Total number of blocks for fat */
+	fat_blocks = b_endian16(boot.b_per_fat);   /* Total number of blocks for fat */
 
 	/* just searching the first fat available  */
 	for (i = 0; i < fat_blocks; i++)
@@ -127,12 +127,14 @@ int search_free_dir(unsigned char dev_id, unsigned short start_cluster)
 	int root_blocks;
 	int total_dir, directory_start;
 	int chain;
+	int b_per_alloc; /* sector per cluster or blocks per cluster */
 	
 	/* read the root block */
 	read(dev_id, 0, (unsigned char*)&boot, 0, sizeof(boot));	
-	fat_blocks = l_endian16(boot.b_per_fat) ;
-	root_blocks = l_endian16(boot.r_dirs) * sizeof(dir_ent) / BLOCK_SIZE ;
+	fat_blocks = b_endian16(boot.b_per_fat) ;
+	root_blocks = b_endian16(boot.r_dirs) * sizeof(dir_ent) / BLOCK_SIZE ;
 	directory_start = boot.fats * fat_blocks + 1;
+	b_per_alloc = boot.b_per_alloc
 
 	DB_PRINTF("search free :%d\n",start_cluster);
 	if ( start_cluster == 0) /* root directory */
@@ -146,7 +148,7 @@ int search_free_dir(unsigned char dev_id, unsigned short start_cluster)
 				//DB_PRINTF("Filename:%d\n",BLOCK_SIZE/sizeof(dent));
 				if (dent.filename[0] == 0x00 || dent.filename[0] == 0xe5)
 				{
-					return  i * BLOCK_SIZE / sizeof(dent) + j ;	
+					return  i * BLOCK_SIZE / sizeof(dent) + j ;	 /* offset per block number */
 				}
 			}	
 		}
@@ -156,15 +158,17 @@ int search_free_dir(unsigned char dev_id, unsigned short start_cluster)
 		chain = start_cluster; 
 		while (chain != 0xFFFF)
 		{
-		
-			for(j = 0; j < BLOCK_SIZE; j+=sizeof(dent))
+			for(i = 0; i < b_per_alloc; i++)
 			{
-				DB_PRINTF("\n%c%c%c\n",dent.filename[0],dent.filename[1],dent.filename[2]);
-				read(dev_id, directory_start + root_blocks - 2 + chain / 2, (unsigned char*)&dent, j, sizeof(dent));
-				
-				if (dent.filename[0] == 0x00 || dent.filename[0] == 0xe5)
+				for(j = 0; j < BLOCK_SIZE; j+=sizeof(dent))
 				{
-					return  i * BLOCK_SIZE / sizeof(dent) + j ;	
+					DB_PRINTF("\n%c%c%c\n",dent.filename[0],dent.filename[1],dent.filename[2]);
+					read(dev_id, directory_start + root_blocks - 2 + chain / 2, (unsigned char*)&dent, j, sizeof(dent));
+				
+					if (dent.filename[0] == 0x00 || dent.filename[0] == 0xe5)
+					{
+						return  i * BLOCK_SIZE / sizeof(dent) + j ;	
+					}
 				}
 			}	
 			read(dev_id, chain / BLOCK_SIZE + 1, (unsigned char*)&chain, chain % BLOCK_SIZE, sizeof(short)); 
@@ -262,6 +266,7 @@ int find_name(unsigned char dev_id, char* filename, unsigned short *start_cluste
 	int i, j;
 	int fat_blocks = 0, root_blocks;
 	int total_dir, directory_start;
+	int b_per_alloc;
 	boot_block boot;
 	dir_ent dent;	
 
@@ -272,13 +277,13 @@ int find_name(unsigned char dev_id, char* filename, unsigned short *start_cluste
 	fat_blocks = l_endian16(boot.b_per_fat) ;
 	root_blocks = l_endian16(boot.r_dirs) * sizeof(dir_ent) / BLOCK_SIZE ;
 	directory_start = boot.fats * fat_blocks + 1;
-	
+	b_per_alloc = boot.b_per_alloc;
 	pos = strchr(filename,'.');
 	
 	/* root directory is statically allocated so routines follow two paths. */
 	if (*start_cluster == 0) /* root dir */
 	{	
-		for(i=0; i < root_blocks; i++)
+		for(i = 0; i < root_blocks; i++)
 		{
 			for(j = 0; j < BLOCK_SIZE; j+=sizeof(dent))
 			{
@@ -327,37 +332,41 @@ int find_name(unsigned char dev_id, char* filename, unsigned short *start_cluste
 
 		while	(chain != 0xFFFF)
 		{
-			for(j = 0; j < BLOCK_SIZE; j+=sizeof(dent))
-			{
-				read(dev_id, directory_start + root_blocks - 2 + chain / 2 , (unsigned char*)&dent, j, sizeof(dent));
-				/* deleted or directory */
-				DB_PRINTF("\n%c%c%c\n",dent.filename[0],dent.filename[1],dent.filename[2]);
-				if (*dent.filename == 0x2e || 
-					*dent.filename == 0xe5 ||
-					(dent.filename [0] == 0x2e && dent.filename[1] == 0x2e)) continue; 
-				if (dent.ext[0] != 0x20 && pos)
+			for(i = 0; i < b_per_alloc; i++)
+			{			
+				for(j = 0; j < BLOCK_SIZE; j+=sizeof(dent))
 				{
-					if (memcmp(dent.filename,filename, strlen(filename)) == 0 && memcmp(dent.ext, ++pos, strlen(pos)) == 0)
+					read(dev_id, directory_start + root_blocks - 2 + chain / 2 , (unsigned char*)&dent, j, sizeof(dent));
+					/* deleted or directory */
+					DB_PRINTF("\n%c%c%c\n",dent.filename[0],dent.filename[1],dent.filename[2]);
+					if (*dent.filename == 0x2e || 
+						*dent.filename == 0xe5 ||
+						(dent.filename [0] == 0x2e && dent.filename[1] == 0x2e)) continue; 
+					if (dent.ext[0] != 0x20 && pos)
 					{
-						//DB_PRINTF("\nfilepos:%d", i * BLOCK_SIZE / sizeof(dent) + j);
-						return  i * BLOCK_SIZE / sizeof(dent) + j ;	
-					}
-				}
-				else  /* file with no extension or sub directory */
-				{
-					if (memcmp(dent.filename,filename,strlen(filename)) == 0) 
-					{
-						if (dent.file_attr & 0x10) /* sub directory return it start cluster */
+						if (memcmp(dent.filename,filename, strlen(filename)) == 0 && memcmp(dent.ext, ++pos, strlen(pos)) == 0)
 						{
-							*start_cluster =  b_endian16(dent.start_cluster);
-						}						
-						return  i * BLOCK_SIZE / sizeof(dent) + j ;	
+							//DB_PRINTF("\nfilepos:%d", i * BLOCK_SIZE / sizeof(dent) + j);
+							return  i * BLOCK_SIZE / sizeof(dent) + j ;	
+						}
+					}
+					else  /* file with no extension or sub directory */
+					{
+						if (memcmp(dent.filename,filename,strlen(filename)) == 0) 
+						{
+							if (dent.file_attr & 0x10) /* sub directory return it start cluster */
+							{
+								*start_cluster =  b_endian16(dent.start_cluster);
+							}						
+							return  i * BLOCK_SIZE / sizeof(dent) + j ;	
 					
+						}
 					}
 				}
-			}	
+			}
+			/* read the fat table for next in chain */	
 			read(dev_id, chain / BLOCK_SIZE + 1, (unsigned char*)&chain, chain % BLOCK_SIZE, sizeof(short)); 
-			chain =  b_endian16(chain); // big endian
+			chain =  b_endian16(chain); /* big endian */
 		}	
 	}
 	return -1;
@@ -403,8 +412,9 @@ int get_cwd(int dev_id, char *path)
 	int found = -1;	
 	unsigned short chain;
 	int directory_start;
-	int i, j;
+	int i, j, k;
 	int next;
+	int b_per_alloc;
 
 	dir_ent dent;
 	boot_block boot;
@@ -413,6 +423,7 @@ int get_cwd(int dev_id, char *path)
 	fat_blocks = b_endian16(boot.b_per_fat) ;
 	root_blocks = b_endian16(boot.r_dirs) * sizeof(dir_ent) / BLOCK_SIZE ;
 	directory_start = boot.fats * fat_blocks + 1;
+	b_per_alloc = boot.b_per_alloc;	
 
 	/* iterate the loop till all the path is not evaluated backwards */
 	while( l_cwd != 0)
@@ -427,7 +438,7 @@ int get_cwd(int dev_id, char *path)
 		/* read the root directory to find the directory entry matching the path */	
 		if (chain == 0)
 		{
-			for(i=0; i < root_blocks; i++)
+			for(i = 0; i < root_blocks; i++)
 			{	
 				for(j = 0; j < BLOCK_SIZE; j+=sizeof(dent))
 				{
@@ -464,29 +475,33 @@ int get_cwd(int dev_id, char *path)
 			}			
 			while (chain != 0xFFFF)
 			{
-				for(j = 0; j < BLOCK_SIZE; j+=sizeof(dent))
+				for(i = 0; i < b_per_alloc; i++)
 				{
-					read(dev_id, directory_start + root_blocks - 2 + chain / 2 , (unsigned char*)&dent, j, sizeof(dent));
-					/* deleted or directory */
-					DB_PRINTF("\n%c%c%c\n",dent.filename[0],dent.filename[1],dent.filename[2]);
-					if (j == 0 && i == 0	   ||
-						*dent.filename == 0x2e || 
-						*dent.filename == 0xe5 ||
-						(dent.filename [0] == 0x2e && dent.filename[1] == 0x2e)) continue; 
-					if (dent.ext[0] == 0x20 &&   b_endian16(dent.start_cluster) == l_cwd)
+					for(j = 0; j < BLOCK_SIZE; j+=sizeof(dent))
 					{
-						 DB_PRINTF("\nfound file:%c\n",dent.filename[0]);
-						 for(i =0 ;i < 8; i++)
-						 {
-						 	if(dent.filename[i]!=0x20)
-							{			
-						 		*path_ptr++ = dent.filename[i];
-							}
-						 }
-					 	 l_cwd = chain;
+						read(dev_id, directory_start + root_blocks - 2 + chain / 2 , (unsigned char*)&dent, j, sizeof(dent));
+						/* deleted or directory */
+						DB_PRINTF("\n%c%c%c\n",dent.filename[0],dent.filename[1],dent.filename[2]);
+						if (j == 0 && i == 0	   ||
+							*dent.filename == 0x2e || 
+							*dent.filename == 0xe5 ||
+							(dent.filename [0] == 0x2e && dent.filename[1] == 0x2e)) continue; 
+						if (dent.ext[0] == 0x20 &&   b_endian16(dent.start_cluster) == l_cwd)
+						{
+							 DB_PRINTF("\nfound file:%c\n",dent.filename[0]);
+							 for(k =0; k < 8; k++)
+							 {
+							 	if(dent.filename[k] != 0x20)
+								{			
+							 		*path_ptr++ = dent.filename[k];
+								}
+							 }
+						 	 l_cwd = chain;
+						}
 					}
 				}	
 				DB_PRINTF("\nchain inside:%d", chain); 
+				/* read fat */
 				read(dev_id, chain / BLOCK_SIZE + 1, (unsigned char*)&chain, chain % BLOCK_SIZE, sizeof(short)); 
 				chain =  b_endian16(chain); 
 			}
@@ -685,6 +700,16 @@ int fat_rmdir(int dev_id, char *path)
 }
 
 
+int fat_first(int dev_id, char *path)
+{
+
+}
+int fat_next(int dev_id, char *path)
+{
+
+
+}
+
 
 int fat_del(int dev_id, char* filename)
 {
@@ -791,8 +816,9 @@ int fat_create(int dev_id, char* filename, int mode)
 			{
 				chain = start_cluster;
 			}
-			directory_start = directory_start + root_blocks - 2 + chain / 2;
+			directory_start = directory_start + root_blocks + (chain / 2 - 2) * boot.b_per_alloc;
 		}
+		
 
 		/* write file entry */
 		/* init the filename and ext with 0x20, required. */
@@ -828,6 +854,7 @@ int fat_create(int dev_id, char* filename, int mode)
 		if (entry_cluster > 0)
 		{	
 			dent.start_cluster = l_endian16(entry_cluster); /* little endian */
+			/* write fat */
 			if (write(dev_id, entry_cluster /  BLOCK_SIZE + 1, (unsigned char*)&chain_last, entry_cluster % BLOCK_SIZE, sizeof(unsigned short)))
 			/* writing currently on on first fat... see later */
 			{
@@ -917,8 +944,9 @@ int fat_open(int dev_id, char* filename, int flags, int mode)
 					{
 						chain = start_cluster;
 					}
-					directory_start = directory_start + root_blocks - 2 + chain / 2;
+					directory_start = directory_start + root_blocks + (chain / 2 - 2) * boot.b_per_alloc;
 				}
+
 				/* write file entry */
 
 				/* init the filename and ext with 0x20, required. */
@@ -1107,9 +1135,9 @@ int fat_write(int fd, char *buffer, int size)
 
 	/* calculate cluster size in bytes */
 
-	allocation_unit = b_endian16(boot.b_per_blocks) * boot.b_per_alloc;
+	allocation_unit = b_endian16(boot.b_per_blocks);
  		
-	DB_PRINTF ("allocation_unit: %d\n",allocation_unit);
+	allocation_unit *=  boot.b_per_alloc;
 
 	chain = start_cluster;
 	
@@ -1183,7 +1211,7 @@ int fat_write(int fd, char *buffer, int size)
 		DB_PRINTF("w_size:%d\n",w_size);
 
 		// start writing on offset
-		write(fd_table[fd].dev_id, directory_start + root_blocks - 2 + chain / 2, 
+		write(fd_table[fd].dev_id, directory_start + root_blocks + (chain / 2 - 2) * boot.b_per_alloc, 
 			  (unsigned char*)buffer + written, fd_table[fd].cur_w_of % allocation_unit , w_size);
 		
 		size -= w_size;
@@ -1192,6 +1220,7 @@ int fat_write(int fd, char *buffer, int size)
 		
 		if (size > 0)
 		{	
+ 			/* read fat */ 
 			read(fd_table[fd].dev_id, chain / BLOCK_SIZE + 1, (unsigned char*)&chain_val, chain % BLOCK_SIZE, sizeof(short)); 
 			DB_PRINTF("chain_val:%d, chain:%d \n", chain_val, chain);
 			if(chain_val == 0xFFFF)
@@ -1202,7 +1231,7 @@ int fat_write(int fd, char *buffer, int size)
 				if (free)
 				{	
 						
-					free_l = l_endian16(free); // little endian	
+					free_l = b_endian16(free); 
 					DB_PRINTF("val:%d",free_l);		
 			
 					write(fd_table[fd].dev_id, chain / BLOCK_SIZE + 1, (unsigned char*)&free_l, chain % BLOCK_SIZE, sizeof(unsigned short));
@@ -1232,7 +1261,7 @@ int fat_write(int fd, char *buffer, int size)
 	if (fd_table[fd].dir_cluster == 0)
 		write(fd_table[fd].dev_id, directory_start, (unsigned char*)&dent, fd_table[fd].id, sizeof(dent));	
 	else
-		write(fd_table[fd].dev_id, directory_start + root_blocks -2 + fd_table[fd].dir_cluster / 2, (unsigned char*)&dent, fd_table[fd].id, sizeof(dent));
+		write(fd_table[fd].dev_id, directory_start + root_blocks + (fd_table[fd].dir_cluster / 2 - 2)  * boot.b_per_alloc, (unsigned char*)&dent, fd_table[fd].id, sizeof(dent));
 	return written;
 }
 
@@ -1246,7 +1275,7 @@ int fat_read(int fd, char *buffer, int size)
 	unsigned short start_cluster;
 	int directory_start;
 	int reads = 0;
-	int block_no;
+	int cluster_no;
 	int w_size;
 	unsigned short chain;
 	unsigned int file_size;
@@ -1281,49 +1310,54 @@ int fat_read(int fd, char *buffer, int size)
 	
 	/* calculate cluster size in bytes */
 
-	allocation_unit = b_endian16(boot.b_per_blocks) * boot.b_per_alloc;
+	allocation_unit = b_endian16(boot.b_per_blocks);
+ 		
+	allocation_unit *=  boot.b_per_alloc;
 	
 	file_size =  b_endian32(dent.f_size);
 	
-	block_no = (fd_table[fd].cur_r_of / allocation_unit);
+	cluster_no = (fd_table[fd].cur_r_of / allocation_unit);
 
 	DB_PRINTF("bno:%d\n",fd_table[fd].cur_r_of );	
 
-	while (block_no >0 && chain!=0xFFFF)
+	while (cluster_no > 0 && chain!=0xFFFF)
 	{
 	
 		read(fd_table[fd].dev_id, chain / BLOCK_SIZE + 1, (unsigned char*)&chain, chain % BLOCK_SIZE, sizeof(short)); 
 
-		chain = ((char*)&chain)[0]<< 8 | ((char*)&chain)[1]; // little endian
+		chain = b_endian16(chain);
 
 		if ( chain == 0xFFFF)
 		{		
 			break;
 		}
 	
-		block_no--;	
+		cluster_no--;	
 	}
 	
 	DB_PRINTF("chain:%d\n",chain);
 
 	if (size + fd_table[fd].cur_r_of > file_size)
+	{
 		return EOF;
+	}
 
 	while (size > 0 )
 	{	
 		
-		if ((fd_table[fd].cur_r_of % BLOCK_SIZE + size) >= allocation_unit)
+		if ((fd_table[fd].cur_r_of % allocation_unit + size) >= allocation_unit)
 		{
-			w_size =  BLOCK_SIZE - fd_table[fd].cur_r_of % allocation_unit;
+			w_size =  allocation_unit - fd_table[fd].cur_r_of % allocation_unit;
 		}
 		else
 		{		
-			w_size =  (size) % BLOCK_SIZE;
+			w_size =  (size) % allocation_unit;
 		}		
 		DB_PRINTF("read size:%d\n", w_size);
 		// start reading on offset
 		
-		read(fd_table[fd].dev_id, directory_start + root_blocks - 2 + chain / 2, (unsigned char*)buffer+reads,
+		read(fd_table[fd].dev_id, directory_start + root_blocks + (chain / 2 - 2) * boot.b_per_alloc ,
+			 (unsigned char*)buffer + reads,
 			 fd_table[fd].cur_r_of % allocation_unit , w_size);
 		
 		
@@ -1468,7 +1502,7 @@ int fat_umount(int dev_id)
 
 int format(int dev_id)
 {
-	int i = 0, j = 0;
+	int i = 0, j = 0, k = 0;
 	int status = 0;
 	int root_blocks;
 	int fat_blocks;
@@ -1486,7 +1520,7 @@ int format(int dev_id)
 	boot.b_strap = 0xeb3c;
 	memcpy(boot.man_desc, "MSWIN4.1", sizeof("MSWIN4.1"));
 	boot.b_per_blocks = l_endian16(block_size); // BLOCK_SIZE
-	boot.b_per_alloc = 0x1; // 1 block
+	boot.b_per_alloc = 0x4; // 1 block  block per cluster
 	boot.r_blocks = 0x0100; // 4 blocks
 	boot.fats = 1;
 	boot.r_dirs = l_endian16(root_dir); // 64;
@@ -1516,30 +1550,37 @@ int format(int dev_id)
 	/*  write FAT tables for the first block only as it only has the 
 	 *	two reserved blocks	
 	 */
-	fat_blocks = l_endian16(boot.b_per_fat);
+	fat_blocks = b_endian16(boot.b_per_fat);
 	
+	//printf("fat_blocks:%d\t", fat_blocks);
 	for (i = 1; i < boot.fats + 1 ;i++)
 	{
-		for (j = 0; j < fat_blocks * BLOCK_SIZE; j+=2)
-		{	
-			if (j == 0)
-			{
-				fat[j] = boot.m_desc;
-				fat[j+1] = 0xFF;
-			}
-			else if (j == 2)
-			{
-				fat[j] = 0xFF;
-				fat[j+1] = 0xFF;
-			}
-			else
-			{
-				fat[j] = 0x00;
-				fat[j+1] = 0x00;
+		for (j = 0; j < fat_blocks; j++)
+		{
+			for (k = 0; k < BLOCK_SIZE; k+=2)
+			{	
+				if (j == 0 && k == 0)
+				{
+					fat[k] = boot.m_desc;
+					fat[k+1] = 0xFF;
+				}
+				else if (j == 0 && k == 2)
+				{
+					fat[k] = 0xFF;
+					fat[k+1] = 0xFF;
+				}
+				else
+				{
+					fat[k] = 0x00;
+					fat[k+1] = 0x00;
 				
+				}
 			}
+			
+			status = write(dev_id, j, fat, k, BLOCK_SIZE);
 		}	
-		status = write(dev_id, i, fat, 0, BLOCK_SIZE);
+		
+
 		if (status  == -1)
 			return -1;
 	}

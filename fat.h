@@ -66,7 +66,7 @@ int fat_next(int dev_id, char *path);
 
 #define ROOT_DIR			64 			// number of root directories
 #define BLOCK_SIZE 			512			// sector size
-#define BLOCK_PER_FAT 		0x14		// block per fat
+#define BLOCK_PER_FAT 		0x0014		// block per fat
 #define FAT16 				"FAT16" 	// FAT16
 #define FAT32 				"FAT32" 	// FAT32
 #define FILE_SEPARATOR 		'/'			// File separator
