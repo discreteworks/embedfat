@@ -1,7 +1,7 @@
 #ifndef __fat_h
 #define __fat_h
 
-/* FAT 16 */
+/* FAT  12 / 16 */
 typedef struct
 {
 	unsigned short  b_strap;	// 
@@ -28,6 +28,7 @@ typedef struct
 } boot_block;
 
 
+/* directory entry */
 typedef struct  
 {
 	unsigned char	filename[8];
@@ -41,7 +42,7 @@ typedef struct
 } dir_ent;
 
 
-/* Fat internals */
+/* FAT internals */
 int find(unsigned char dev_id, char* filename, unsigned short start_cluster);
 int find_name(unsigned char dev_id, char* filename, unsigned short *start_cluster);
 int search_free_dir(unsigned char dev_id, unsigned short start_cluster);
@@ -49,7 +50,7 @@ unsigned short search_free_space(unsigned char dev_id);
 int delete_chain(int dev_id, unsigned short start_cluster);
 
 
-/* Fat16 api */
+/* FAT api */
 int fat_open(int dev_id, char* filename, int flags, int mode);
 int fat_create(int dev_id, char* filename, int mode);
 int fat_close(int fd);
@@ -63,13 +64,15 @@ int fat_first(int dev_id, char *path);
 int fat_next(int dev_id, char *path);
 
 
+/* constants */
 
-#define ROOT_DIR			64 			// number of root directories
-#define BLOCK_SIZE 			512			// sector size
-#define BLOCK_PER_FAT 		0x0014		// block per fat
-#define FAT16 				"FAT16" 	// FAT16
-#define FAT32 				"FAT32" 	// FAT32
-#define FILE_SEPARATOR 		'/'			// File separator
+#define ROOT_DIR			64 			/* number of root directories */
+#define BLOCK_SIZE 			512			/* sector size */
+#define BLOCK_PER_FAT 		0x0014		/* block per fat */
+#define FAT12 				"FAT12" 	/* FAT12 */
+#define FAT16 				"FAT16" 	/* FAT16 */
+#define FAT32 				"FAT32" 	/* FAT32 */
+#define FILE_SEPARATOR 		'/'			/* file separator */
 
 
 #ifdef DEBUG
@@ -79,14 +82,14 @@ int fat_next(int dev_id, char *path);
 #endif
 
 
-/* Conversion macro little endian and big endian */
+/* conversion macro little endian and big endian */
 
 #define swap32(integer)	 		((unsigned char *)&integer)[0] <<  24 |\
-							 	((unsigned char *)&integer)[1] << 16 |\
-							 	((unsigned char *)&integer)[2] << 8 |\
+							 	((unsigned char *)&integer)[1] <<  16 |\
+							 	((unsigned char *)&integer)[2] <<   8 |\
 							 	((unsigned char *)&integer)[3]
 
-#define swap16(s_integer)	 	((unsigned char*)&s_integer)[0] << 8 |\
+#define swap16(s_integer)	 	((unsigned char*)&s_integer)[0] <<  8 |\
 					 		 	((unsigned char*)&s_integer)[1]		
 
 
@@ -98,5 +101,28 @@ int fat_next(int dev_id, char *path);
 #define b_endian16(s_integer)	swap16(s_integer)
 
 #define l_endian16(s_integer)	swap16(s_integer)
+
+
+/* year date and month marco */
+
+
+#define set_date(year, month, day) (year << 9 | month << 5 | day) & 0x0000FFFF
+
+#define get_year(date)   (date & 0xFE00) >> 9
+
+#define get_month(date)  (date & 0x01E0) >> 5
+
+#define get_day(date)	 (date) & 0x001F
+
+
+/* hour minute and second marco */
+
+#define set_time(hour, min, sec) (hour << 11 | min << 5 | day) & 0x0000FFFF
+
+#define get_hour(time)    (time & 0xFE00) >> 11
+
+#define get_minute(date)  (time & 0x01E0) >> 5
+
+#define get_second(date)  (time) & 0x001F		
 
 #endif
