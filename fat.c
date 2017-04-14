@@ -6,7 +6,7 @@
 * any loss or damage that be a result of utilizing the product as system /sub system or complete software.
 */
 
-#define DEBUG
+/* #define DEBUG */
 
 #include <stdio.h>
 #include <stdlib.h>
