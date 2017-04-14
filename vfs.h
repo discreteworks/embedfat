@@ -35,6 +35,15 @@ typedef struct
 }
 DISK;
 
+typedef struct  
+{
+	unsigned char	filename[8];
+	unsigned char	ext[3];
+	unsigned char	file_attr;
+	struct tm     *date_time;
+	unsigned int	f_size;
+} directory;
+
 
 int readDisk(unsigned char dev_id, unsigned char *ptr, int offset, int size);
 int writeDisk(unsigned char dev_id, unsigned char *ptr, int offset, int size);

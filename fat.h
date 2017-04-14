@@ -108,21 +108,21 @@ int fat_next(int dev_id, char *path);
 
 #define set_date(year, month, day) (year << 9 | month << 5 | day) & 0x0000FFFF
 
-#define get_year(date)   (date & 0xFE00) >> 9
+#define get_year(date)   ((date & 0xFE00) >> 9)
 
-#define get_month(date)  (date & 0x01E0) >> 5
+#define get_month(date)  ((date & 0x01E0) >> 5)
 
-#define get_day(date)	 (date) & 0x001F
+#define get_day(date)	   (date & 0x001F)
 
 
 /* hour minute and second marco */
 
-#define set_time(hour, min, sec) (hour << 11 | min << 5 | day) & 0x0000FFFF
+#define set_time(hour, min, sec) (hour << 11 | min << 5 | sec) & 0x0000FFFF
 
-#define get_hour(time)    (time & 0xFE00) >> 11
+#define get_hour(time)    ((time & 0xF800) >> 11)
 
-#define get_minute(date)  (time & 0x01E0) >> 5
+#define get_minute(time)  ((time & 0x07E0) >> 5)
 
-#define get_second(date)  (time) & 0x001F		
+#define get_second(time)  (time  & 0x001F)		
 
 #endif

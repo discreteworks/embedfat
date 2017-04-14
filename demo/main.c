@@ -24,6 +24,7 @@ static int format_demo();
 static int file_create_demo();
 static int file_delete_demo();
 static int dir_delete_demo();
+static int file_list_demo();
 
 int  main()
 {
@@ -39,6 +40,7 @@ int  main()
 	result |= file_create_demo();
 	result |= file_delete_demo();
 	result |= dir_delete_demo();
+  result |= file_list_demo();
 
 	if (result == 0)
 	{
@@ -47,6 +49,57 @@ int  main()
 		printf("\n***************************\n");
 	}
 	
+}
+
+static int file_list_demo()
+{
+  	char cpath[] = "foo.txt";
+	char pathb[] = "sam"; 
+	char *rpath;
+	
+	printf("\n*********\n");
+	printf("\nFILE LIST DEMO\n"); 
+	printf("\n*********\n"); 	
+
+	int device_id =  disk.init( BLOCK_SIZE * 1000); // 1000 blocks
+	
+	format(device_id);
+
+	fat_mount(device_id);  //vfs specific function
+
+	set_cwd(device_id, pathb);
+
+	rpath = (char*) malloc(40);
+	
+	get_cwd(device_id, rpath);
+
+	printf("return path:%s\n",rpath);	
+
+	free(rpath);
+
+	int fd = fat_create(device_id,cpath, 0xFF);
+
+	printf("fd:%d\n",fd);
+
+	printf("write:%d\n",fat_write(fd, txt, 1135));
+	
+	char *buffer = (char*)malloc(1135);
+
+	printf("read:%d\n",fat_read(fd,buffer, 1135));
+
+	if ( strcmp(buffer,txt) != 0)
+	{	
+		free(buffer);
+		disk.deinit();
+		return -1;
+	}
+	free(buffer);
+  
+  fat_first(device_id, "");
+	disk.deinit();
+  
+  return 0;
+
 }
 
 static int file_create_demo()
