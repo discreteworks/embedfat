@@ -1326,6 +1326,7 @@ int fat_write(int fd, char *buffer, int size)
 	int written = 0;
 	int block_no;
 	int w_size = 0;	
+	int cur_offset = 0;
 	dir_ent dent;
 	boot_block boot;
   time_t t; 
@@ -1333,21 +1334,18 @@ int fat_write(int fd, char *buffer, int size)
 		
 	if (fd_table[fd].id < 0)
 	{
-		return -1; // file close
+		return -1; /* file close  */
 	}
-
 	if (buffer == NULL)
 	{
-		return -1; // empty buffer 
+		return -1; /* empty buffer */
 	}
 	
 	/* read the root block */
 	read(fd_table[fd].dev_id, 0, (unsigned char*)&boot, 0, sizeof(boot));	
-
 	fat_blocks = b_endian16(boot.b_per_fat) ;
 	root_blocks = b_endian16(boot.r_dirs) * sizeof(dir_ent) / BLOCK_SIZE ;
 	directory_start = boot.fats * fat_blocks + 1;
-	
 	DB_PRINTF("dir cluster : %d\n", fd_table[fd].dir_cluster);
 
 	if (fd_table[fd].dir_cluster == 0)
@@ -1386,29 +1384,24 @@ int fat_write(int fd, char *buffer, int size)
 	else
 	{
 		/* seek */
-
 		block_no = (fd_table[fd].cur_w_of / allocation_unit);
-
-		if (fd_table[fd].flags & O_APPEND) //append mode // 
+		
+		/*append mode */ 
+		if (fd_table[fd].flags & O_APPEND) 
 		{
 			fd_table[fd].cur_w_of = file_size;
-		
 			block_no = (fd_table[fd].cur_w_of / allocation_unit);
 		}
-		
 		DB_PRINTF("block_no : %d\n", fd_table[fd].flags & O_TRUNC );
 	
 		while (block_no > 0 && chain!=0xFFFF)
 		{
 			read(fd_table[fd].dev_id, chain / BLOCK_SIZE + 1, (unsigned char*)&chain, chain % BLOCK_SIZE, sizeof(short)); 
-
 			chain = b_endian16(chain); 
-		
 			if ( chain == 0xFFFF)
 			{		
 				break;
 			}
-		
 			block_no--;	
 		}
 	}
@@ -1417,6 +1410,8 @@ int fat_write(int fd, char *buffer, int size)
 	DB_PRINTF("(write offset + size) mod block size : %d\n", (fd_table[fd].cur_w_of + size)% BLOCK_SIZE);
 	DB_PRINTF("file size : %d\n", file_size);
 	
+	/* save current value of offset */
+	cur_offset = fd_table[fd].cur_w_of;
 	while (size > 0)
 	{	
 		if ((fd_table[fd].cur_w_of % allocation_unit + size) >= allocation_unit)
@@ -1435,7 +1430,6 @@ int fat_write(int fd, char *buffer, int size)
 			  (unsigned char*)buffer + written, fd_table[fd].cur_w_of % allocation_unit , w_size);
 		
 		size -= w_size;
-		file_size += w_size;
 		written += w_size;
 		
 		if (size > 0)
@@ -1449,7 +1443,7 @@ int fat_write(int fd, char *buffer, int size)
 				if (free)
 				{	
 					free_l = b_endian16(free); 
-					DB_PRINTF(" free chain val : %d", free_l);		
+					DB_PRINTF("free chain val : %d\n", free_l);		
 					write(fd_table[fd].dev_id, chain / BLOCK_SIZE + 1, (unsigned char*)&free_l, chain % BLOCK_SIZE, sizeof(unsigned short));
 					write(fd_table[fd].dev_id, free / BLOCK_SIZE +  1, (unsigned char*)&free_val, free % BLOCK_SIZE, sizeof(unsigned short));
 					chain = free;
@@ -1466,6 +1460,10 @@ int fat_write(int fd, char *buffer, int size)
 		}
 		fd_table[fd].cur_w_of += written;
 	}
+	if (cur_offset + written > b_endian32(dent.f_size))
+	{
+			 file_size += written;
+	}
 	/* set new file size */
 	dent.f_size = l_endian32(file_size);
   
@@ -1478,7 +1476,7 @@ int fat_write(int fd, char *buffer, int size)
   ftime = set_time(tm->tm_hour, tm->tm_min, tm->tm_sec);
   DB_PRINTF("format h : %d m : %d s :%d\n", get_hour(ftime), get_minute(ftime), get_second(ftime));
   dent.time = l_endian16(ftime); 
-	DB_PRINTF(" after:dent.f_size : %d\n", file_size);	
+	DB_PRINTF("after:dent.f_size : %d\n", file_size);	
  
 	if (fd_table[fd].dir_cluster == 0)
 	{	
@@ -1487,9 +1485,9 @@ int fat_write(int fd, char *buffer, int size)
 	else
 	{
 		write(fd_table[fd].dev_id,
-			  directory_start + root_blocks + (fd_table[fd].dir_cluster / 2 - 2)  * boot.b_per_alloc, 
-			  (unsigned char*)&dent, fd_table[fd].id,
-			  sizeof(dent));
+			    directory_start + root_blocks + (fd_table[fd].dir_cluster / 2 - 2)  * boot.b_per_alloc, 
+					(unsigned char*)&dent, fd_table[fd].id,
+					sizeof(dent));
 	}
 	return written;
 }

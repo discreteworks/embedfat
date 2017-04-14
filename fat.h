@@ -84,13 +84,13 @@ int fat_next(int dev_id, char *path);
 
 /* conversion macro little endian and big endian */
 
-#define swap32(integer)	 		((unsigned char *)&integer)[0] <<  24 |\
+#define swap32(integer)	 		(((unsigned char *)&integer)[0] <<  24 |\
 							 	((unsigned char *)&integer)[1] <<  16 |\
 							 	((unsigned char *)&integer)[2] <<   8 |\
-							 	((unsigned char *)&integer)[3]
+							 	((unsigned char *)&integer)[3])
 
-#define swap16(s_integer)	 	((unsigned char*)&s_integer)[0] <<  8 |\
-					 		 	((unsigned char*)&s_integer)[1]		
+#define swap16(s_integer)	 	(((unsigned char*)&s_integer)[0] <<  8 |\
+					 		 	((unsigned char*)&s_integer)[1])		
 
 
 #define b_endian32(integer)	 	swap32(integer)
