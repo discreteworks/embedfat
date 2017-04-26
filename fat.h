@@ -44,7 +44,7 @@ typedef struct
 
 /* FAT internals */
 int find(unsigned char dev_id, char* filename, unsigned short start_cluster);
-int find_name(unsigned char dev_id, char* filename, unsigned short *start_cluster);
+int find_name(unsigned char dev_id, char* filename, unsigned short *dir_s_cluster);
 int search_free_dir(unsigned char dev_id, unsigned short start_cluster);
 unsigned short search_free_space(unsigned char dev_id);
 int delete_chain(int dev_id, unsigned short start_cluster);
@@ -60,8 +60,8 @@ int fat_read(int fd, char *buffer, int size);
 int fat_mkdir(int dev_id, char *path);
 int fat_del(int dev_id, char *path);
 int fat_rmdir(int dev_id, char *path);
-int fat_first(int dev_id, char *path);
-int fat_next(int dev_id, char *path);
+int fat_first(int dev_id, directory *dir);;
+int fat_next(int dev_id, directory *dir);
 
 
 /* constants */

@@ -5,6 +5,8 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
+
 
 extern DISK disk;
 extern FD fd_table[MAX_FILE_OPEN];
@@ -53,10 +55,11 @@ int  main()
 
 static int file_list_demo()
 {
-  	char cpath[] = "foo.txt";
+  char cpath[] = "foo.txt";
 	char pathb[] = "sam"; 
 	char *rpath;
-	
+	directory dir;
+  
 	printf("\n*********\n");
 	printf("\nFILE LIST DEMO\n"); 
 	printf("\n*********\n"); 	
@@ -95,7 +98,11 @@ static int file_list_demo()
 	}
 	free(buffer);
   
-  fat_first(device_id, "");
+  fat_first(device_id, &dir);
+  
+  printf("year:%d\n", dir.dt.tm_year);
+  strftime (buffer,80,"Now it's %y/%m/%d.", &dir.dt);
+  puts (buffer);
 	disk.deinit();
   
   return 0;

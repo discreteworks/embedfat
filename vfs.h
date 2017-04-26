@@ -1,7 +1,11 @@
 #ifndef __vfs_h
 #define __vfs_h
 
+#include <time.h>
+
 #define MAX_FILE_OPEN	10
+
+typedef struct tm  datetime;
 
 struct ml
 {
@@ -40,8 +44,9 @@ typedef struct
 	unsigned char	filename[8];
 	unsigned char	ext[3];
 	unsigned char	file_attr;
-	struct tm     *date_time;
+	datetime   dt;
 	unsigned int	f_size;
+  unsigned int  dirent;
 } directory;
 
 

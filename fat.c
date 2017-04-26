@@ -13,8 +13,9 @@
 #include <string.h>
 #include <time.h>
 #include "fnctl.h"
-#include "fat.h"
 #include "vfs.h"
+#include "fat.h"
+
 
 extern DISK disk;
 extern FD fd_table[MAX_FILE_OPEN];
@@ -260,7 +261,7 @@ int search_path(int dev_id, char *path, unsigned short *start_cluster)
 		if (path[i] == FILE_SEPARATOR || path[i] == '\0')
 		{
 			path[i] = '\0';
-			DB_PRINTF("search path:%s\n",&path[offset_length]);	
+			printf("search path:%s\n",&path[offset_length]);	
 			found = find_name(dev_id, &path[offset_length], start_cluster);
 			
 			offset_length= i + 1;
@@ -289,15 +290,15 @@ int search_path(int dev_id, char *path, unsigned short *start_cluster)
 *   Description
 *		called iteratively to search a dir or file within a directory cluster.
 *   Inputs
-*		dev_id			device id.
-*		path			path of file/directory to search.
-*		start_cluster	start_cluster passed as reference contains current start cluster to begin.
+*		dev_id			  device id.
+*		path			    path of file/directory to search.
+*		dir_s_cluster directory start_cluster passed as reference contains current start cluster to begin.
 *		
 *   Outputs 
 *		found 			current index of the directory entry in its parent.
 *		start_cluster 	start cluster of the directory entry or current directory of file.
 */
-int find_name(unsigned char dev_id, char* filename, unsigned short *start_cluster)
+int find_name(unsigned char dev_id, char* filename, unsigned short *dir_s_cluster)
 {
 	char file[13];
 	char *pos;
@@ -321,11 +322,11 @@ int find_name(unsigned char dev_id, char* filename, unsigned short *start_cluste
 	pos = strchr(filename,'.');
 	
 	/* root directory is statically allocated so routines follow two paths. */
-	if (*start_cluster == 0) /* root dir */
+	if (*dir_s_cluster == 0) /* root dir */
 	{	
 		for(i = 0; i < root_blocks; i++)
 		{
-			for(j = 0; j < BLOCK_SIZE; j+=sizeof(dent))
+			for(j = 0; j < BLOCK_SIZE; j += sizeof(dent))
 			{
 				read(dev_id, directory_start + i, (unsigned char*)&dent, j, sizeof(dent));
 
@@ -347,7 +348,7 @@ int find_name(unsigned char dev_id, char* filename, unsigned short *start_cluste
 					{
 						if (dent.file_attr & 0x10)	/* sub directory return it start cluster */
 						{
-							*start_cluster =  b_endian16(dent.start_cluster);
+							*dir_s_cluster =  b_endian16(dent.start_cluster);
 						}
 						return  i * BLOCK_SIZE / sizeof(dent) + j ;	
 					}
@@ -357,7 +358,7 @@ int find_name(unsigned char dev_id, char* filename, unsigned short *start_cluste
 	}
 	else /* dynamically allocated user directories */
 	{
-		chain = *start_cluster; 
+		chain = *dir_s_cluster; 
 
 		DB_PRINTF("subdir : %d\n",directory_start + root_blocks - 2 + chain / 2);
 		
@@ -374,15 +375,15 @@ int find_name(unsigned char dev_id, char* filename, unsigned short *start_cluste
 		{
 			for(i = 0; i < b_per_alloc; i++)
 			{
-				for(j = 0; j < BLOCK_SIZE; j+=sizeof(dent))
+				for(j = 0; j < BLOCK_SIZE; j += sizeof(dent))
 				{
 					read(dev_id, directory_start + root_blocks - 2 + chain / 2 , (unsigned char*)&dent, j, sizeof(dent));
 					DB_PRINTF("file[0..2] : %c%c%c\n",dent.filename[0],dent.filename[1],dent.filename[2]);
 
 					/* deleted or directory */
 					if (*dent.filename == 0x2e || 
-						*dent.filename == 0xe5 ||
-						(dent.filename [0] == 0x2e && dent.filename[1] == 0x2e)) continue; 
+              *dent.filename == 0xe5 ||
+              (dent.filename [0] == 0x2e && dent.filename[1] == 0x2e)) continue; 
 					if (dent.ext[0] != 0x20 && pos)
 					{
 						if (memcmp(dent.filename,filename, strlen(filename)) == 0 && memcmp(dent.ext, ++pos, strlen(pos)) == 0)
@@ -396,7 +397,7 @@ int find_name(unsigned char dev_id, char* filename, unsigned short *start_cluste
 						{
 							if (dent.file_attr & 0x10) /* sub directory return it start cluster */
 							{
-								*start_cluster =  b_endian16(dent.start_cluster);
+								*dir_s_cluster =  b_endian16(dent.start_cluster);
 							}						
 							return  i * BLOCK_SIZE / sizeof(dent) + j ;	
 						}
@@ -809,9 +810,8 @@ int fat_rmdir(int dev_id, char *path)
 *   Outputs 
 *		returns 0 on success and -1 on failure.
 */
-int fat_first(int dev_id, char *path)
+int fat_first(int dev_id, directory *dir)
 {
-	char *pos;
 	unsigned short parent_cluster = 0;
 	unsigned short start_cluster = 0;
 	unsigned short chain_val;
@@ -825,6 +825,7 @@ int fat_first(int dev_id, char *path)
 	int fat_blocks = 0;
 	int fdate;
 	int ftime;
+  int pos = 0;
 	
 	boot_block boot;
 	dir_ent dent;	
@@ -834,10 +835,10 @@ int fat_first(int dev_id, char *path)
 	fat_blocks = l_endian16(boot.b_per_fat) ;
 	root_blocks = l_endian16(boot.r_dirs) * sizeof(dir_ent) / BLOCK_SIZE ;
 	directory_start = boot.fats * fat_blocks + 1;
-
+  
 	start_cluster = cwd;  /* set the start cluster to current working directory	*/
 	
-	found = search_path(dev_id, path, &start_cluster);
+	found = search_path(dev_id, "", &start_cluster);
 	
 	if (start_cluster == 0)
 	{
@@ -846,12 +847,32 @@ int fat_first(int dev_id, char *path)
 	}
 	else
 	{
-		write(dev_id, directory_start + root_blocks - 2 + parent_cluster / 2 , (unsigned char*)&dent, found, sizeof(dent));
+		write(dev_id, directory_start + root_blocks + (start_cluster / 2 - 2) * boot.b_per_alloc, (unsigned char*)&dent, found, sizeof(dent));
 	}
-	
-	fdate = b_endian16(dent.date);
+  fdate = b_endian16(dent.date);
 	ftime = b_endian16(dent.time);
 
+  while(dent.filename[pos]!= 0x20 && pos < 8)  
+  {
+    dir->filename[pos] =  dent.filename[pos];   
+    pos++;
+  }
+  dir->filename[pos] = '\0';
+  pos = 0;
+  while(dent.ext[pos] != 0x20 && pos < 3) 
+  {
+      dir->ext[pos] =  dent.ext[pos];   
+      pos++;
+  }
+  dent.ext[pos] = '\0';
+  dir->dt.tm_year = get_year(fdate) + 80;
+  dir->dt.tm_mon = get_month(fdate) - 1;
+  dir->dt.tm_mday = get_day(fdate);
+  dir->dt.tm_hour = get_hour(ftime);
+  dir->dt.tm_min = get_minute(ftime);
+  dir->dt.tm_sec = get_second(ftime);
+  dir->dirent = found;  
+	dir->f_size = b_endian32(dent.f_size);  
 	DB_PRINTF("filename: %s\n",  dent.filename);
 	DB_PRINTF("date: %d-%d-%d %d:%d:%d\n", get_year(fdate) + 1980  ,get_month(fdate),get_day(fdate),
 																				  get_hour(ftime), get_minute(ftime), get_second(ftime));
@@ -870,7 +891,7 @@ int fat_first(int dev_id, char *path)
 *   Outputs 
 *		returns 0 on success and -1 on failure.
 */
-int fat_next(int dev_id, char *path)
+int fat_next(int dev_id, directory *dir)
 {
 
 
@@ -920,7 +941,7 @@ int fat_del(int dev_id, char* filename)
 	}
 	else
 	{
-		read(dev_id, directory_start + root_blocks - 2 + start_cluster / 2 , (unsigned char*)&dent, found, sizeof(dent));	
+		read(dev_id, directory_start + root_blocks + (start_cluster / 2 - 2) * boot.b_per_alloc, (unsigned char*)&dent, found, sizeof(dent));	
 	}
 	entry_cluster = l_endian16(dent.start_cluster);
 	
@@ -940,7 +961,7 @@ int fat_del(int dev_id, char* filename)
 	}
 	else
 	{
-		write(dev_id, directory_start + root_blocks - 2 + start_cluster / 2 , (unsigned char*)&dent, found, sizeof(dent));
+		write(dev_id, directory_start + root_blocks + (start_cluster / 2 - 2) * boot.b_per_alloc, (unsigned char*)&dent, found, sizeof(dent));
 	}
 	return 0;	
 }
