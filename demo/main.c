@@ -27,6 +27,7 @@ static int file_create_demo();
 static int file_delete_demo();
 static int dir_delete_demo();
 static int file_list_demo();
+static int dir_chain_cluster_demo();
 
 int  main()
 {
@@ -43,7 +44,7 @@ int  main()
 	result |= file_delete_demo();
 	result |= dir_delete_demo();
   result |= file_list_demo();
-
+  dir_chain_cluster_demo();
 	if (result == 0)
 	{
 		printf("\n***************************\n");
@@ -161,7 +162,7 @@ static int file_delete_demo()
 	char path[] = "FOO";
 	int fd;
 	char *buffer;
-
+  unsigned short chain_cluster;
 	char *pos;
 
 	
@@ -184,7 +185,7 @@ static int file_delete_demo()
 
 	fat_del(device_id, path);
 
-	search_free_dir(device_id, 0);
+	search_free_dir(device_id, 0, &chain_cluster);
 
 	fd = fat_open(device_id, path , O_RDWR, 0x21);
 
@@ -480,4 +481,44 @@ static int dir_delete_demo()
 	return status == -1 ? 0 : status  ;
 
 }
+
+
+static int dir_chain_cluster_demo()
+{
+	char patha[] = "sam"; 
+  char file_path[] =  "sam/fooxx.txt";
+	char i, j;
+	
+	int fd, status;
+	char *rpath;
+
+	printf("\n***************\n");
+	printf("\nFILE CLUSTER DEMO\n"); 
+	printf("\n***************\n"); 
+	
+	int device_id =  disk.init( BLOCK_SIZE * 1000); // 1000 blocks
+
+	format(device_id);
+
+	fat_mount(device_id);  //vfs specific function
+
+	set_cwd(device_id, "");
+	
+	fat_mkdir(device_id,patha);
+
+  for (i = 0; i < 2; i++)
+    for (j = 0; j < 10; j++)
+    {
+      file_path[7] = i + 48;
+      file_path[8] = j + 48;
+      printf("filepath: %s\n", file_path);
+      fd = fat_open(device_id, file_path ,O_CREAT|O_RDWR, 0x00);
+      printf("fd:%d\n", fd);
+      fat_close(fd);
+    }
+	
+
+}
+
+
 
