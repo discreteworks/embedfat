@@ -203,15 +203,16 @@ int search_free_dir(unsigned char dev_id, unsigned short dir_s_cluster, unsigned
 			{
 				for(j = 0; j < BLOCK_SIZE; j+=sizeof(dent))
 				{
-					DB_PRINTF("\n%c%c%c\n",dent.filename[0],dent.filename[1],dent.filename[2]);
+					DB_PRINTF("%c%c%c\t",dent.filename[0],dent.filename[1],dent.filename[2]);
           DB_PRINTF("sub dir:%d\n",(chain / 2 - 2) + i);
 					read(dev_id, directory_start + root_blocks + (chain / 2 - 2) + i, (unsigned char*)&dent, j, sizeof(dent));
-				
+          
+          *chain_cluster = chain;
 					if (dent.filename[0] == 0x00 || dent.filename[0] == 0xe5)
 					{
             return  i * BLOCK_SIZE + j ;	/* return the next size plus the block size if allocation unit is > 1 */
 					}
-          *chain_cluster = chain;
+          
 				}
 			}	
       
@@ -384,7 +385,8 @@ int find_name(unsigned char dev_id, char* filename, unsigned short *dir_s_cluste
 				{
 					read(dev_id, directory_start + root_blocks + (chain / 2 - 2) + i , (unsigned char*)&dent, j, sizeof(dent));
 					DB_PRINTF("file[0..2] : %c%c%c\n",dent.filename[0],dent.filename[1],dent.filename[2]);
-
+          
+          *chain_cluster = chain;
 					/* deleted or directory */
 					if (*dent.filename == 0x2e || 
               *dent.filename == 0xe5 ||
@@ -393,8 +395,7 @@ int find_name(unsigned char dev_id, char* filename, unsigned short *dir_s_cluste
 					{
 						if (memcmp(dent.filename,filename, strlen(filename)) == 0 && memcmp(dent.ext, ++pos, strlen(pos)) == 0)
 						{
-              *chain_cluster = chain;
-							return  i * BLOCK_SIZE + j ;	
+              return  i * BLOCK_SIZE + j ;	
 						}
 					}
 					else  /* file with no extension or sub directory */
@@ -405,11 +406,9 @@ int find_name(unsigned char dev_id, char* filename, unsigned short *dir_s_cluste
 							{ 
 								*dir_s_cluster =  b_endian16(dent.start_cluster);
 							}
-              *chain_cluster = chain;
-							return  i * BLOCK_SIZE + j ;	
+        			return  i * BLOCK_SIZE + j ;	
 						}
 					}
-          *chain_cluster = chain;
 				}
 			}
 			/* read the fat table for next in chain */	
@@ -665,7 +664,7 @@ int fat_mkdir(int dev_id, char *path)
 	}
 	found = search_free_dir(dev_id, start_cluster, &chain_cluster);
 	
-	DB_PRINTF("new start cluster:%d\n", start_cluster);
+	printf("new start cluster:%d, chain_cluster:%d\n", start_cluster, chain_cluster);
 	DB_PRINTF("found : %d\n", found);
 
 	if (start_cluster > 0)
