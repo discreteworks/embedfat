@@ -35,7 +35,7 @@ int  main()
 	printf("\n************\n");
 	printf("\nDemo started\n");
 	printf("\n************\n");
-		
+
 	result |= file_open_demo();
 	result |= dir_create_demo();
 	result |= mount_demo();
@@ -44,7 +44,8 @@ int  main()
 	result |= file_delete_demo();
 	result |= dir_delete_demo();
   result |= file_list_demo();
-  dir_chain_cluster_demo();
+  result |= dir_chain_cluster_demo();
+  
 	if (result == 0)
 	{
 		printf("\n***************************\n");
@@ -425,7 +426,6 @@ static int dir_create_demo()
 
 }
 
-
 static int dir_delete_demo()
 {
 	char file_path[] =  "sam/foo.txt";	
@@ -481,20 +481,26 @@ static int dir_delete_demo()
 	return status == -1 ? 0 : status  ;
 
 }
-
+/* 
+Directory with more than one cluster in chain. File and directories are
+created in chain cluster.
+Test file creation and deletion
+Test direction creation and deletion
+*/
 
 static int dir_chain_cluster_demo()
 {
 	char patha[] = "sam"; 
   char file_path[] =  "sam/fooxx.txt";
+  char dir_path[] =  "sam/dirxx";
 	char i, j;
 	
 	int fd, status;
 	char *rpath;
 
-	printf("\n***************\n");
-	printf("\nFILE CLUSTER DEMO\n"); 
-	printf("\n***************\n"); 
+	printf("\n******************************\n");
+	printf("\nDIR FILE IN CHAIN CLUSTER DEMO\n"); 
+	printf("\n******************************\n"); 
 	
 	int device_id =  disk.init( BLOCK_SIZE * 1000); // 1000 blocks
 
@@ -507,17 +513,47 @@ static int dir_chain_cluster_demo()
 	fat_mkdir(device_id,patha);
 
   for (i = 0; i < 2; i++)
+  {
     for (j = 0; j < 10; j++)
     {
+       /* create file */
       file_path[7] = i + 48;
       file_path[8] = j + 48;
       printf("filepath: %s\n", file_path);
       fd = fat_open(device_id, file_path ,O_CREAT|O_RDWR, 0x00);
       printf("fd:%d\n", fd);
       fat_close(fd);
+      
+      /* create sub directory */
+      dir_path[7] = i + 48;
+      dir_path[8] = j + 48;
+      fat_mkdir(device_id,dir_path);
+      
     }
-	
-
+  }
+  for (i = 0; i < 2; i++)
+  {
+    for (j = 0; j < 10; j++)
+    {
+       /* open and delete file */
+      file_path[7] = i + 48;
+      file_path[8] = j + 48;
+      printf("filepath: %s\n", file_path);
+      fat_del(device_id, file_path);
+      fd = fat_open(device_id, file_path ,O_RDWR, 0x00);  
+      printf("fd:%d\n", fd);
+      fat_close(fd);
+     
+      
+      /* delete sub directory */
+      dir_path[7] = i + 48;
+      dir_path[8] = j + 48;
+      rmdir(device_id,dir_path);
+      
+    }
+  }
+  
+  return 0;
 }
 
 
