@@ -47,6 +47,7 @@ typedef struct
 	datetime   dt;
 	unsigned int	f_size;
   unsigned int  dirent;
+  unsigned int  cluster;
 } directory;
 
 

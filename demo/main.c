@@ -35,7 +35,7 @@ int  main()
 	printf("\n************\n");
 	printf("\nDemo started\n");
 	printf("\n************\n");
-
+#if 0
 	result |= file_open_demo();
 	result |= dir_create_demo();
 	result |= mount_demo();
@@ -43,8 +43,11 @@ int  main()
 	result |= file_create_demo();
 	result |= file_delete_demo();
 	result |= dir_delete_demo();
-  result |= file_list_demo();
   result |= dir_chain_cluster_demo();
+
+#endif
+  result |= file_list_demo();
+  
   
 	if (result == 0)
 	{
@@ -52,13 +55,19 @@ int  main()
 		printf("\nDemo completed successfully\n");
 		printf("\n***************************\n");
 	}
-	
+
+	return 0;
 }
 
 static int file_list_demo()
 {
   char cpath[] = "foo.txt";
+  char bpath[] = "boo.txt";
 	char pathb[] = "sam"; 
+  char file_path1[] =  "fooxx.txt";
+  char file_path2[] =  "sam/fooxx.txt";
+  char dir_path1[] =  "dirxx";
+  char dir_path2[] =  "sam/dirxx";
 	char *rpath;
 	directory dir;
   
@@ -71,6 +80,28 @@ static int file_list_demo()
 	format(device_id);
 
 	fat_mount(device_id);  //vfs specific function
+#if 0  
+  for (i = 0; i < 2; i++)
+  {
+    for (j = 0; j < 10; j++)
+    {
+       /* create file */
+      file_path[7] = i + 48;
+      file_path[8] = j + 48;
+      printf("filepath: %s\n", file_path);
+      fd = fat_open(device_id, file_path ,O_CREAT|O_RDWR, 0x00);
+      printf("fd:%d\n", fd);
+      fat_close(fd);
+      
+      /* create sub directory */
+      dir_path[7] = i + 48;
+      dir_path[8] = j + 48;
+      fat_mkdir(device_id,dir_path);
+      
+    }
+  }
+#endif  
+  fat_mkdir(device_id, pathb);
 
 	set_cwd(device_id, pathb);
 
@@ -81,26 +112,31 @@ static int file_list_demo()
 	printf("return path:%s\n",rpath);	
 
 	free(rpath);
+  
+  int fd = fat_create(device_id,bpath, 0xFF);
 
-	int fd = fat_create(device_id,cpath, 0xFF);
+	fd = fat_create(device_id,cpath, 0xFF);
 
 	printf("fd:%d\n",fd);
 
-	printf("write:%d\n",fat_write(fd, txt, 1135));
+	//printf("write:%d\n",fat_write(fd, txt, 1135));
 	
 	char *buffer = (char*)malloc(1135);
 
-	printf("read:%d\n",fat_read(fd,buffer, 1135));
+	//printf("read:%d\n",fat_read(fd,buffer, 1135));
 
 	if ( strcmp(buffer,txt) != 0)
 	{	
-		free(buffer);
-		disk.deinit();
-		return -1;
+		//free(buffer);
+		//disk.deinit();
+		//return -1;
 	}
 	free(buffer);
   
   fat_first(device_id, &dir);
+  fat_next(device_id, &dir);
+  fat_next(device_id, &dir);
+  fat_next(device_id, &dir);
   
   printf("year:%d\n", dir.dt.tm_year);
   strftime (buffer,80,"Now it's %y/%m/%d.", &dir.dt);
@@ -495,8 +531,7 @@ static int dir_chain_cluster_demo()
   char dir_path[] =  "sam/dirxx";
 	char i, j;
 	
-	int fd, status;
-	char *rpath;
+	int fd;
 
 	printf("\n******************************\n");
 	printf("\nDIR FILE IN CHAIN CLUSTER DEMO\n"); 
@@ -548,7 +583,7 @@ static int dir_chain_cluster_demo()
       /* delete sub directory */
       dir_path[7] = i + 48;
       dir_path[8] = j + 48;
-      rmdir(device_id,dir_path);
+      fat_rmdir(device_id,dir_path);
       
     }
   }
