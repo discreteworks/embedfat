@@ -35,7 +35,6 @@ int  main()
 	printf("\n************\n");
 	printf("\nDemo started\n");
 	printf("\n************\n");
-#if 0
 	result |= file_open_demo();
 	result |= dir_create_demo();
 	result |= mount_demo();
@@ -44,8 +43,6 @@ int  main()
 	result |= file_delete_demo();
 	result |= dir_delete_demo();
   result |= dir_chain_cluster_demo();
-
-#endif
   result |= file_list_demo();
   
   
@@ -62,14 +59,13 @@ int  main()
 static int file_list_demo()
 {
   char cpath[] = "foo.txt";
-  char bpath[] = "boo.txt";
-	char pathb[] = "sam"; 
+  char path1[] = "";
+	char path2[] = "sam"; 
   char file_path1[] =  "fooxx.txt";
-  char file_path2[] =  "sam/fooxx.txt";
-  char dir_path1[] =  "dirxx";
-  char dir_path2[] =  "sam/dirxx";
+  char file_path2[] =  "fooxx.txt";
 	char *rpath;
 	directory dir;
+  int fd, i, j;
   
 	printf("\n*********\n");
 	printf("\nFILE LIST DEMO\n"); 
@@ -80,69 +76,94 @@ static int file_list_demo()
 	format(device_id);
 
 	fat_mount(device_id);  //vfs specific function
-#if 0  
-  for (i = 0; i < 2; i++)
+  
+  fat_mkdir(device_id, path2);
+
+	
+	
+  for (i = 0; i < 3; i++)
   {
     for (j = 0; j < 10; j++)
     {
        /* create file */
-      file_path[7] = i + 48;
-      file_path[8] = j + 48;
-      printf("filepath: %s\n", file_path);
-      fd = fat_open(device_id, file_path ,O_CREAT|O_RDWR, 0x00);
+      file_path2[7] = i + 48;
+      file_path2[8] = j + 48;
+      printf("filepath: %s\n", file_path2);
+      fd = fat_open(device_id, file_path2 ,O_CREAT|O_RDWR, 0x00);
       printf("fd:%d\n", fd);
       fat_close(fd);
       
-      /* create sub directory */
-      dir_path[7] = i + 48;
-      dir_path[8] = j + 48;
-      fat_mkdir(device_id,dir_path);
-      
     }
   }
-#endif  
-  fat_mkdir(device_id, pathb);
+  char *buffer = (char*)malloc(80);
+  fat_first(device_id, &dir);
+  printf("filename:%s.%s\n", dir.filename, dir.ext);
+  printf("year:%d\n", dir.dt.tm_year);
+  strftime (buffer,80,"Now it's %y/%m/%d.", &dir.dt);
+  puts (buffer);
 
-	set_cwd(device_id, pathb);
+  for (i = 0; i < 3; i++)
+  {
+    for (j = 0; j < 10; j++)
+    {
+      fat_next(device_id, &dir);
+      printf("filename:%s.%s\n", dir.filename, dir.ext);
+      printf("year:%d\n", dir.dt.tm_year);
+      strftime (buffer,80,"Now it's %y/%m/%d.", &dir.dt);
+      puts (buffer);
+    }
+  }
+  
+  set_cwd(device_id, path2);
 
 	rpath = (char*) malloc(40);
 	
 	get_cwd(device_id, rpath);
-
-	printf("return path:%s\n",rpath);	
+  printf("return path:%s\n",rpath);	
 
 	free(rpath);
-  
-  int fd = fat_create(device_id,bpath, 0xFF);
 
-	fd = fat_create(device_id,cpath, 0xFF);
 
-	printf("fd:%d\n",fd);
+  for (i = 0; i < 3; i++)
+  {
+    for (j = 0; j < 10; j++)
+    {
+       /* create file */
+      file_path2[7] = i + 48;
+      file_path2[8] = j + 48;
+      printf("filepath: %s\n", file_path2);
+      fd = fat_open(device_id, file_path2 ,O_CREAT|O_RDWR, 0x00);
+      printf("fd:%d\n", fd);
+      fat_close(fd);
+      
+    }
+  }  
 
-	//printf("write:%d\n",fat_write(fd, txt, 1135));
-	
-	char *buffer = (char*)malloc(1135);
-
-	//printf("read:%d\n",fat_read(fd,buffer, 1135));
-
-	if ( strcmp(buffer,txt) != 0)
-	{	
-		//free(buffer);
-		//disk.deinit();
-		//return -1;
-	}
-	free(buffer);
-  
   fat_first(device_id, &dir);
-  fat_next(device_id, &dir);
-  fat_next(device_id, &dir);
-  fat_next(device_id, &dir);
-  
+  printf("filename:%s.%s\n", dir.filename, dir.ext);
   printf("year:%d\n", dir.dt.tm_year);
   strftime (buffer,80,"Now it's %y/%m/%d.", &dir.dt);
   puts (buffer);
+  fat_next(device_id, &dir);
+  printf("filename:%s.%s\n", dir.filename, dir.ext);
+  printf("year:%d\n", dir.dt.tm_year);
+  strftime (buffer,80,"Now it's %y/%m/%d.", &dir.dt);
+  puts (buffer);
+  for (i = 0; i < 3; i++)
+  {
+    for (j = 0; j < 10; j++)
+    {
+      fat_next(device_id, &dir);
+      printf("filename:%s.%s\n", dir.filename, dir.ext);
+      printf("year:%d\n", dir.dt.tm_year);
+      strftime (buffer,80,"Now it's %y/%m/%d.", &dir.dt);
+      puts (buffer);
+    }
+  }
+  
 	disk.deinit();
   
+  free(buffer);
   return 0;
 
 }

@@ -42,7 +42,7 @@ DISK;
 typedef struct  
 {
 	unsigned char	filename[8];
-	unsigned char	ext[3];
+	unsigned char	ext[4];
 	unsigned char	file_attr;
 	datetime   dt;
 	unsigned int	f_size;

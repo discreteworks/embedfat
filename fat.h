@@ -75,7 +75,7 @@ int fat_next(int dev_id, directory *dir);
 #define FILE_SEPARATOR 		'/'			/* file separator */
 
 
-#ifdef DEBUG
+#if DEBUG
 	#define DB_PRINTF(f_, ...) printf((f_), __VA_ARGS__)
 #else
 	#define DB_PRINTF(f_, ...)
