@@ -1,5 +1,17 @@
-# embedfat
-To build:
+embedfat
+--------
+Implementation of FAT file system.
+
+## Support
+- Fat 16
+
+
+## Build
+```
 make
-To run:
+```
+
+## Run
+```
 ./fat
+```

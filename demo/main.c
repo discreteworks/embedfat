@@ -28,6 +28,7 @@ static int file_delete_demo();
 static int dir_delete_demo();
 static int file_list_demo();
 static int dir_chain_cluster_demo();
+int mount_demo();
 
 int  main()
 {

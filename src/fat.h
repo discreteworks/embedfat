@@ -2,43 +2,41 @@
 #define __fat_h
 
 /* FAT  12 / 16 */
-typedef struct
-{
-	unsigned short  b_strap;	// 
-	unsigned char   man_desc[8]; // manufacturer description
-	unsigned short  b_per_blocks;// bytes per block
-	unsigned char 	b_per_alloc;// blocks per allocation unit
-	unsigned short 	r_blocks; 	// reserved blocks
-	unsigned char	fats;		// total fats
-	unsigned short	r_dirs;   	// root blocks;
-	unsigned short	t2_blocks;  // total blocks if fits in 2 bytes else 0;
-	unsigned char	m_desc;		// media descriptor
-	unsigned short	b_per_fat;	// blocks per fat
-	unsigned short	b_per_track;// blocks per tracks
-	unsigned short	no_heads;	// number of heads
-	unsigned int	h_blocks;	// hidden blocks
-	unsigned int 	t4_blocks;	// total block greater than 2 bytes;
-	unsigned short	p_dno;		// physical drive number
-	unsigned char	extd_brd_sig;// extended boot record signature
-	unsigned int	v_serial_no;// volume serial number
-	unsigned char	v_label[11];// volume label
-	unsigned char	fs_id[8];	// file system identifier
-	unsigned char	bt[0x1c0];	// bootstrap program;
-	unsigned short	b_sig;		// boot signature;
+typedef struct {
+  unsigned short  b_strap;	//
+  unsigned char   man_desc[8]; // manufacturer description
+  unsigned short  b_per_blocks;// bytes per block
+  unsigned char 	b_per_alloc;// blocks per allocation unit
+  unsigned short 	r_blocks; 	// reserved blocks
+  unsigned char	fats;		// total fats
+  unsigned short	r_dirs;   	// root blocks;
+  unsigned short	t2_blocks;  // total blocks if fits in 2 bytes else 0;
+  unsigned char	m_desc;		// media descriptor
+  unsigned short	b_per_fat;	// blocks per fat
+  unsigned short	b_per_track;// blocks per tracks
+  unsigned short	no_heads;	// number of heads
+  unsigned int	h_blocks;	// hidden blocks
+  unsigned int 	t4_blocks;	// total block greater than 2 bytes;
+  unsigned short	p_dno;		// physical drive number
+  unsigned char	extd_brd_sig;// extended boot record signature
+  unsigned int	v_serial_no;// volume serial number
+  unsigned char	v_label[11];// volume label
+  unsigned char	fs_id[8];	// file system identifier
+  unsigned char	bt[0x1c0];	// bootstrap program;
+  unsigned short	b_sig;		// boot signature;
 } boot_block;
 
 
 /* directory entry */
-typedef struct  
-{
-	unsigned char	filename[8];
-	unsigned char	ext[3];
-	unsigned char	file_attr;
-	unsigned char	res[10];
-	unsigned short	time;
-	unsigned short	date;
-	unsigned short	start_cluster;
-	unsigned int	f_size;
+typedef struct {
+  unsigned char	filename[8];
+  unsigned char	ext[3];
+  unsigned char	file_attr;
+  unsigned char	res[10];
+  unsigned short	time;
+  unsigned short	date;
+  unsigned short	start_cluster;
+  unsigned int	f_size;
 } dir_ent;
 
 
@@ -62,6 +60,11 @@ int fat_del(int dev_id, char *path);
 int fat_rmdir(int dev_id, char *path);
 int fat_first(int dev_id, directory *dir);;
 int fat_next(int dev_id, directory *dir);
+int fat_mount(int dev_id);
+int fat_umount(int dev_id);
+int set_cwd(int dev_id, char *path);
+int get_cwd(int dev_id, char *path);
+int get_free_fd();
 
 
 /* constants */
@@ -76,9 +79,9 @@ int fat_next(int dev_id, directory *dir);
 
 
 #if DEBUG
-	#define DB_PRINTF(f_, ...) printf((f_), __VA_ARGS__)
+#define DB_PRINTF(f_, ...) printf((f_), __VA_ARGS__)
 #else
-	#define DB_PRINTF(f_, ...)
+#define DB_PRINTF(f_, ...)
 #endif
 
 
@@ -90,7 +93,7 @@ int fat_next(int dev_id, directory *dir);
 							 	((unsigned char *)&integer)[3])
 
 #define swap16(s_integer)	 	(((unsigned char*)&s_integer)[0] <<  8 |\
-					 		 	((unsigned char*)&s_integer)[1])		
+					 		 	((unsigned char*)&s_integer)[1])
 
 
 #define b_endian32(integer)	 	swap32(integer)
@@ -123,6 +126,6 @@ int fat_next(int dev_id, directory *dir);
 
 #define get_minute(time)  ((time & 0x07E0) >> 5)
 
-#define get_second(time)  (time  & 0x001F)		
+#define get_second(time)  (time  & 0x001F)
 
 #endif
