@@ -46,7 +46,6 @@ int writeRamdisk(unsigned char *ptr, int offset, int size)
 {
   memcpy(disk.data + offset, ptr, size);
   return size;
-
 }
 
 int readRamdisk(unsigned char *ptr, int offset, int size)

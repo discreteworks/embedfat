@@ -22,18 +22,18 @@ extern FD fd_table[MAX_FILE_OPEN];
 
 unsigned short cwd;
 
-/*	Name
-*		read
+/* Name
+*read
 *   Description
-*		fat read method.
-*	Inputs
-*		dev_id    		device id.
-*		block_no 		block number or sector number to read.
-*		buffer			data to read.
-*		offset			offset from the block.
-*		bytes			size to read.
-*	Outputs
-*		status			0 for success and -1 for failure.
+*fat read method.
+* Inputs
+*dev_id    device id.
+*block_no block number or sector number to read.
+*buffer data to read.
+*offset offset from the block.
+*bytes size to read.
+* Outputs
+*status 0 for success and -1 for failure.
 *
 */
 int read(unsigned dev_id, int block_no,unsigned char *buffer, int offset, int bytes)
@@ -42,17 +42,17 @@ int read(unsigned dev_id, int block_no,unsigned char *buffer, int offset, int by
 }
 
 /*  Name
-*		write
+*write
 *   Description
-*		fat write method.
+*fat write method.
 *   Inputs
-*		dev_id			device id.
-*		block_no 		block number or sector number to write.
-*		buffer			data to write.
-*		offset			offset from the block.
-*		bytes			size to write.
+*dev_id device id.
+*block_no block number or sector number to write.
+*buffer data to write.
+*offset offset from the block.
+*bytes size to write.
 *   Outputs
-*		status			0 for success and -1 for failure.
+*status 0 for success and -1 for failure.
 *
 */
 int write(unsigned dev_id, int block_no,unsigned char *buffer, int offset, int bytes)
@@ -61,14 +61,14 @@ int write(unsigned dev_id, int block_no,unsigned char *buffer, int offset, int b
 }
 
 /*  Name
-*		delete_chain
+*delete_chain
 *   Description
-*		deletes chains in fat starting from start cluster.
+*deletes chains in fat starting from start cluster.
 *   Inputs
-*		dev_id    		device id.
-*		start_cluster   start cluster.
+*dev_id    device id.
+*start_cluster   start cluster.
 *   Outputs
-*		status			0 for success and -1 for failure.
+*status 0 for success and -1 for failure.
 *
 */
 int delete_chain(int dev_id, unsigned short start_cluster)
@@ -91,14 +91,14 @@ int delete_chain(int dev_id, unsigned short start_cluster)
   return 0;
 }
 /*  Name
-*		search_free_space
+*search_free_space
 *   Description
-*		search free space within fat.
+*search free space within fat.
 *   Inputs
-*		dev_id		device id.
+*dev_iddevice id.
 *
 *   Outputs
-*		fat cluster		fat entry for cluster.
+*fat clusterfat entry for cluster.
 *
 */
 unsigned short search_free_space(unsigned char dev_id)
@@ -131,17 +131,17 @@ unsigned short search_free_space(unsigned char dev_id)
 }
 
 /*  Name
-*		search_free_dir
+*search_free_dir
 *   Description
-*		search free directory entry space within root directory and sub directory starting with
-*		start cluster.
+*search free directory entry space within root directory and sub directory starting with
+*start cluster.
 *   Inputs
-*		dev_id			device id.
-*		path			path of file/directory to search.
-*		dir_s_cluster	start_cluster passed as directory entries cluster to begin.
+*dev_id device id.
+*path path of file/directory to search.
+*dir_s_cluster start_cluster passed as directory entries cluster to begin.
 *
 *   Outputs
-*		found			current index of the directory entry in its start directory.
+*found current index of the directory entry in its start directory.
 *
 */
 int search_free_dir(unsigned char dev_id, unsigned short dir_s_cluster, unsigned short *chain_cluster)
@@ -171,7 +171,7 @@ int search_free_dir(unsigned char dev_id, unsigned short dir_s_cluster, unsigned
         //DB_PRINTF("Filename:%d\n",BLOCK_SIZE/sizeof(dent));
         if (dent.filename[0] == 0x00 || dent.filename[0] == 0xe5) {
           DB_PRINTF("NEW Found%d\n",i );
-          return  i * BLOCK_SIZE  + j ;	 /* offset per block number */
+          return  i * BLOCK_SIZE  + j ;  /* offset per block number */
         }
       }
     }
@@ -187,7 +187,7 @@ int search_free_dir(unsigned char dev_id, unsigned short dir_s_cluster, unsigned
 
           *chain_cluster = chain;
           if (dent.filename[0] == 0x00 || dent.filename[0] == 0xe5) {
-            return  i * BLOCK_SIZE + j ;	/* return the next size plus the block size if allocation unit is > 1 */
+            return  i * BLOCK_SIZE + j ; /* return the next size plus the block size if allocation unit is > 1 */
           }
 
         }
@@ -201,18 +201,18 @@ int search_free_dir(unsigned char dev_id, unsigned short dir_s_cluster, unsigned
 }
 
 /*  Name
-*		search_path
+*search_path
 *   Description
-*		search a path for current directory offset and for directory find its
-*		start cluster.
+*search a path for current directory offset and for directory find its
+*start cluster.
 *   Inputs
-*		dev_id			device id.
-*		path			path of file/directory to search.
-*		start_cluster	start_cluster passed as reference contains current start cluster to begin.
+*dev_id device id.
+*path path of file/directory to search.
+*start_cluster start_cluster passed as reference contains current start cluster to begin.
 *
 *   Outputs
-*		found 			current index of the directory entry in its parent.
-*		start_cluster 	start cluster of the directory entry or current directory of file.
+*found  current index of the directory entry in its parent.
+*start_cluster  start cluster of the directory entry or current directory of file.
 */
 int search_path(int dev_id, char *path, unsigned short *start_cluster, unsigned short *chain_cluster)
 {
@@ -255,24 +255,24 @@ int search_path(int dev_id, char *path, unsigned short *start_cluster, unsigned 
         }
 
       }
-      path[i]	= FILE_SEPARATOR;
+      path[i] = FILE_SEPARATOR;
     }
   }
   return found;
 }
 
 /*  Name
-*		find_name
+*find_name
 *   Description
-*		called iteratively to search a dir or file within a directory cluster.
+*called iteratively to search a dir or file within a directory cluster.
 *   Inputs
-*		dev_id			  device id.
-*		path			    path of file/directory to search.
-*		dir_s_cluster directory start_cluster passed as reference contains current start cluster to begin.
+*dev_id   device id.
+*path     path of file/directory to search.
+*dir_s_cluster directory start_cluster passed as reference contains current start cluster to begin.
 *
 *   Outputs
-*		found 			current index of the directory entry in its parent.
-*		start_cluster 	start cluster of the directory entry or current directory of file.
+*found  current index of the directory entry in its parent.
+*start_cluster  start cluster of the directory entry or current directory of file.
 */
 int find_name(unsigned char dev_id, char* filename, unsigned short *dir_s_cluster, unsigned short *chain_cluster)
 {
@@ -314,7 +314,7 @@ int find_name(unsigned char dev_id, char* filename, unsigned short *dir_s_cluste
           }
         } else { /* file with no extension or sub directory */
           if (memcmp(dent.filename,filename,strlen(filename)) == 0) {
-            if (dent.file_attr & 0x10) {	/* sub directory return it start cluster */
+            if (dent.file_attr & 0x10) { /* sub directory return it start cluster */
               *dir_s_cluster =  b_endian16(dent.start_cluster);
             }
             return  i * BLOCK_SIZE + j ;
@@ -335,7 +335,7 @@ int find_name(unsigned char dev_id, char* filename, unsigned short *dir_s_cluste
       return -1;
     }
 
-    while	(chain != 0xFFFF) {
+    while (chain != 0xFFFF) {
       for(i = 0; i < b_per_alloc; i++) {
         for(j = 0; j < BLOCK_SIZE; j += sizeof(dent)) {
           read(dev_id, directory_start + root_blocks + (chain / 2 - 2) + i, (unsigned char*)&dent, j, sizeof(dent));
@@ -370,15 +370,15 @@ int find_name(unsigned char dev_id, char* filename, unsigned short *dir_s_cluste
 }
 
 /*  Name
-*		set_cwd
+*set_cwd
 *   Description
-*		set the current working directory.
+*set the current working directory.
 *   Inputs
-*		dev_id			device id.
-*		path			path of directory.
+*dev_id device id.
+*path path of directory.
 *
 *   Outputs
-*		set current working directory or root directory.
+*set current working directory or root directory.
 */
 int set_cwd(int dev_id, char *path)
 {
@@ -399,15 +399,15 @@ int set_cwd(int dev_id, char *path)
 }
 
 /*  Name
-*		get_cwd
+*get_cwd
 *   Description
-*		set the current working directory.
+*set the current working directory.
 *   Inputs
-*		dev_id			device id.
-*		path			return path of directory.
+*dev_id device id.
+*path return path of directory.
 *
 *   Outputs
-*		get current working directory.
+*get current working directory.
 */
 int get_cwd(int dev_id, char *path)
 {
@@ -453,7 +453,7 @@ int get_cwd(int dev_id, char *path)
           read(dev_id, directory_start + i, (unsigned char*)&dent, j, sizeof(dent));
           /* deleted or directory */
           DB_PRINTF("file[0..2] : %c%c%c\n",dent.filename[0],dent.filename[1],dent.filename[2]);
-          if (j == 0 && i == 0	   ||
+          if (j == 0 && i == 0    ||
               *dent.filename == 0x2e ||
               *dent.filename == 0xe5 ||
               (dent.filename [0] == 0x2e && dent.filename[1] == 0x2e)) continue;
@@ -483,7 +483,7 @@ int get_cwd(int dev_id, char *path)
             read(dev_id, directory_start + root_blocks - 2 + chain / 2, (unsigned char*)&dent, j, sizeof(dent));
             /* deleted or directory */
             DB_PRINTF("file[0..2] : %c%c%c\n",dent.filename[0],dent.filename[1],dent.filename[2]);
-            if (j == 0 && i == 0	   ||
+            if (j == 0 && i == 0    ||
                 *dent.filename == 0x2e ||
                 *dent.filename == 0xe5 ||
                 (dent.filename [0] == 0x2e && dent.filename[1] == 0x2e)) continue;
@@ -535,15 +535,15 @@ int get_cwd(int dev_id, char *path)
 }
 
 /*  Name
-*		fat_mkdir
+*fat_mkdir
 *   Description
-*		create directory.
+*create directory.
 *   Inputs
-*		dev_id    		device id.
-*		path			path of directory.
+*dev_id    device id.
+*path path of directory.
 *
 *   Outputs
-*		returns 0 on success and -1 on failure.
+*returns 0 on success and -1 on failure.
 */
 int fat_mkdir(int dev_id, char *path)
 {
@@ -650,15 +650,15 @@ int fat_mkdir(int dev_id, char *path)
 }
 
 /*  Name
-*		fat_rmdir
+*fat_rmdir
 *   Description
-*		delete directory.
+*delete directory.
 *   Inputs
-*		dev_id    		device id.
-*		path			path of directory.
+*dev_id    device id.
+*path path of directory.
 *
 *   Outputs
-*		returns 0 on success and -1 on failure.
+*returns 0 on success and -1 on failure.
 */
 int fat_rmdir(int dev_id, char *path)
 {
@@ -685,7 +685,7 @@ int fat_rmdir(int dev_id, char *path)
   root_blocks = l_endian16(boot.r_dirs) * sizeof(dir_ent) / BLOCK_SIZE ;
   directory_start = boot.fats * fat_blocks + 1;
 
-  start_cluster = cwd;  /* set the start cluster to current working directory	*/
+  start_cluster = cwd;  /* set the start cluster to current working directory */
 
   found = search_path(dev_id, path, &start_cluster, &chain_cluster);
 
@@ -722,15 +722,15 @@ int fat_rmdir(int dev_id, char *path)
 }
 
 /*  Name
-*		fat_first
+*fat_first
 *   Description
-*		get first directory of path.
+*get first directory of path.
 *   Inputs
-*		dev_id    		device id.
-*		path			path of directory.
+*dev_id    device id.
+*path path of directory.
 *
 *   Outputs
-*		returns 0 on success and -1 on failure.
+*returns 0 on success and -1 on failure.
 */
 int fat_first(int dev_id, directory *dir)
 {
@@ -759,7 +759,7 @@ int fat_first(int dev_id, directory *dir)
   root_blocks = l_endian16(boot.r_dirs) * sizeof(dir_ent) / BLOCK_SIZE ;
   directory_start = boot.fats * fat_blocks + 1;
   b_per_alloc = boot.b_per_alloc;
-  start_cluster = cwd;  /* set the start cluster to current working directory	*/
+  start_cluster = cwd;  /* set the start cluster to current working directory */
 
   found = search_path(dev_id, "", &start_cluster, &chain_cluster);
 
@@ -829,15 +829,15 @@ exit:
 }
 
 /*  Name
-*		fat_next
+*fat_next
 *   Description
-*		get next directory of path.
+*get next directory of path.
 *   Inputs
-*		dev_id    device id.
-*		path			path of directory.
+*dev_id    device id.
+*path path of directory.
 *
 *   Outputs
-*		returns 0 on success and -1 on failure.
+*returns 0 on success and -1 on failure.
 */
 int fat_next(int dev_id, directory *dir)
 {
@@ -936,16 +936,16 @@ exit:
 
 }
 
-/*	Name
-*		fat_del
-*		Description
-*		delete file name.
-*		Inputs
-*		dev_id			device id.
-*		filename		path of filename.
+/* Name
+*fat_del
+*Description
+*delete file name.
+*Inputs
+*dev_id device id.
+*filenamepath of filename.
 *
-*		Outputs
-*		returns 0 on success and -1 on failure.
+*Outputs
+*returns 0 on success and -1 on failure.
 */
 int fat_del(int dev_id, char* filename)
 {
@@ -971,7 +971,7 @@ int fat_del(int dev_id, char* filename)
   root_blocks = l_endian16(boot.r_dirs) * sizeof(dir_ent) / BLOCK_SIZE ;
   directory_start = boot.fats * fat_blocks + 1;
 
-  start_cluster = cwd;  /* set the start cluster to current working directory	*/
+  start_cluster = cwd;  /* set the start cluster to current working directory */
 
   found = search_path(dev_id, filename, &start_cluster, &chain_cluster);
 
@@ -1003,16 +1003,16 @@ int fat_del(int dev_id, char* filename)
 }
 
 /*  Name
-*		fat_create
+*fat_create
 *   Description
-*		create file name.
+*create file name.
 *   Inputs
-*		dev_id			device id.
-*		filename		path of filename.
-*		mode			mode of file.
+*dev_id device id.
+*filenamepath of filename.
+*mode mode of file.
 *
 *   Outputs
-*		returns 0 on success and -1 on failure.
+*returns 0 on success and -1 on failure.
 */
 int fat_create(int dev_id, char* filename, int mode)
 {
@@ -1042,7 +1042,7 @@ int fat_create(int dev_id, char* filename, int mode)
   root_blocks = l_endian16(boot.r_dirs) * sizeof(dir_ent) / BLOCK_SIZE ;
   directory_start = boot.fats * fat_blocks + 1;
 
-  start_cluster = cwd;  /* set the start cluster to current working directory	*/
+  start_cluster = cwd;  /* set the start cluster to current working directory */
 
   found = search_path(dev_id, filename, &start_cluster, &chain_cluster);
 
@@ -1134,17 +1134,17 @@ int fat_create(int dev_id, char* filename, int mode)
 }
 
 /*  Name
-*		fat_open
+*fat_open
 *   Description
-*		open file name based on flags (read,read/write,create and truncate).
+*open file name based on flags (read,read/write,create and truncate).
 *   Inputs
-*		dev_id		device id.
-*		filename		path of filename.
-*		flags			flag determine file open criteria..
-*		mode			mode of file e.g create readonly file.
+*dev_iddevice id.
+*filenamepath of filename.
+*flags flag determine file open criteria..
+*mode mode of file e.g create readonly file.
 *
 *   Outputs
-*		returns 0 on success and -1 on failure.
+*returns 0 on success and -1 on failure.
 */
 int fat_open(int dev_id, char* filename, int flags, int mode)
 {
@@ -1663,7 +1663,7 @@ int find(unsigned char dev_id, char* filename, unsigned short start_cluster)
   } else {
     chain = start_cluster;
     chain = b_endian16(chain);
-    while	(chain != 0xFFFF) {
+    while (chain != 0xFFFF) {
       for(j = 0; j < BLOCK_SIZE; j+=sizeof(dent)) {
         read(dev_id, directory_start + root_blocks + chain / 2, (unsigned char*)&dent, j, sizeof(dent));
 
@@ -1713,9 +1713,9 @@ int fat_umount(int dev_id)
 int format(int dev_id)
 {
   char fat[BLOCK_SIZE * BLOCK_PER_FAT] = {0x00};
-  unsigned short block_size 		= BLOCK_SIZE;
-  unsigned short root_dir 		= ROOT_DIR;
-  unsigned short block_per_fat 	= BLOCK_PER_FAT;
+  unsigned short block_size = BLOCK_SIZE;
+  unsigned short root_dir = ROOT_DIR;
+  unsigned short block_per_fat  = BLOCK_PER_FAT;
   unsigned short fdate;
   unsigned short ftime;
   int i = 0, j = 0, k = 0;
@@ -1739,7 +1739,7 @@ int format(int dev_id)
   boot.fats = 1;
   boot.r_dirs = l_endian16(root_dir); /* root directory blocks; */
   boot.t2_blocks = l_endian32(disk.size);
-  boot.m_desc	   = 0xf8;
+  boot.m_desc    = 0xf8;
   boot.b_per_fat = l_endian16(block_per_fat);
   boot.b_per_track = 0x0a00;
   boot.no_heads = 0x0100;
@@ -1762,7 +1762,7 @@ int format(int dev_id)
     return -1;
 
   /*  write FAT tables for the first block only as it only has the
-   *	two reserved blocks
+   * two reserved blocks
     */
   fat_blocks = b_endian16(boot.b_per_fat);
 

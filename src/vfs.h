@@ -2,8 +2,7 @@
 #define __vfs_h
 
 #include <time.h>
-
-#define MAX_FILE_OPEN	10
+#define MAX_FILE_OPEN 10
 
 typedef struct tm  datetime;
 
@@ -11,7 +10,6 @@ struct ml {
   unsigned char	dev_id;
   unsigned char 	mount_point;
   unsigned char	fs[4];
-
 } mount_list[2];
 
 typedef struct {
@@ -22,8 +20,7 @@ typedef struct {
   unsigned int cur_w_of;
   unsigned char modes;
   unsigned char flags;
-}
-FD;
+} FD;
 
 typedef struct {
   unsigned char dev_id;
@@ -33,8 +30,7 @@ typedef struct {
   int (*read)(unsigned char *ptr,  int offset, int size);
   int (*init)(unsigned int diskSize);
   int (*deinit)();
-}
-DISK;
+} DISK;
 
 typedef struct {
   unsigned char	filename[8];
@@ -46,7 +42,6 @@ typedef struct {
   unsigned int  cluster;
 } directory;
 
-
 int readDisk(unsigned char dev_id, unsigned char *ptr, int offset, int size);
 int writeDisk(unsigned char dev_id, unsigned char *ptr, int offset, int size);
 
@@ -55,6 +50,4 @@ int mount(int dev_id);
 int format(int dev_id);
 int read(unsigned dev_id, int block_no,unsigned char *buffer, int offset, int bytes);
 int write(unsigned dev_id, int block_no,unsigned char *buffer, int offset, int bytes);
-
 #endif
-
