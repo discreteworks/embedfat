@@ -13,5 +13,5 @@ make
 
 ## Run
 ```
-./fat
+./fat-demo
 ```
