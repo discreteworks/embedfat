@@ -1,0 +1,3 @@
+src/*.o
+demo/*.o
+demo-fat

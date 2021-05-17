@@ -75,7 +75,6 @@ static int file_list_demo()
       fd = fat_open(device_id, file_path2,O_CREAT|O_RDWR, 0x00);
       printf("fd:%d\n", fd);
       fat_close(fd);
-
     }
   }
   char *buffer = (char*)malloc(80);
@@ -108,7 +107,6 @@ static int file_list_demo()
       fd = fat_open(device_id, file_path2,O_CREAT|O_RDWR, 0x00);
       printf("fd:%d\n", fd);
       fat_close(fd);
-
     }
   }
   fat_first(device_id, &dir);
@@ -303,7 +301,6 @@ static int format_demo()
   return fd == -1 ? 0 : 1;
 }
 
-
 static int dir_create_demo()
 {
   char file_path[] =  "sam/dam/ram/foo.txt";
@@ -351,7 +348,6 @@ static int dir_delete_demo()
   printf("\n***************\n");
   printf("\nDELETE DIR DEMO\n");
   printf("\n***************\n");
-
   int device_id =  disk.init( BLOCK_SIZE * 1000); // 1000 blocks
   format(device_id);
   fat_mount(device_id);  //vfs specific function
