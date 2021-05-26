@@ -1,1 +1,15 @@
-script: make
+language: c
+compiler: gcc
+
+before_install:
+  #- sudo add-apt-repository -y ppa:ubuntu-toolchain-r/test
+  #- sudo apt-get update -qq
+
+install: 
+  # cppcheck
+  #- sudo apt-get install -y -qq cppcheck
+  #- sudo apt install -y -qq  valgrind 
+
+script: 
+  # Build project
+  make
